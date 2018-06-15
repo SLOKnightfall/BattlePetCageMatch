@@ -1,0 +1,15 @@
+package-as: BattlePetCageMatch
+
+manual-changelog:
+    filename: CHANGELOG.md
+    markup-type: markdown
+
+externals:
+    BattlePetCageMatch/Libs/AceAddon-3.0: https://repos.wowace.com/wow/ace3/trunk/AceAddon-3.0
+    BattlePetCageMatch/Libs/LibStub: https://repos.wowace.com/wow/libstub/trunk 
+
+enable-nolib-creation: no
+
+ignore:
+    - README.md
+    - BattlePetCageMatch/Libs/

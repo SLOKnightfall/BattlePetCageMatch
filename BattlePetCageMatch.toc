@@ -1,0 +1,14 @@
+﻿## Interface: 70300
+## Title: BattlePetCageMatch (@project-version@)
+## Version: @project-version@
+## Game Version: 7.3
+## Author: SLOKnightfall
+## Notes: Helper for dealing with Battle Pet Cages
+
+
+#Libraries
+Libs\LibStub-1.0\LibStub.lua
+Libs\AceAddon-3.0\AceAddon-3.0.xml
+
+#Core Files
+BattlePetCageMatch.lua
