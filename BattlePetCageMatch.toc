@@ -4,7 +4,7 @@
 ## Game Version: 7.3
 ## Author: SLOKnightfall
 ## Notes: Helper for dealing with Battle Pet Cages
-## OptionalDeps: TradeSkillMaster_AuctionDB, TradeSkillMaster,PetJournalEnhanced
+## OptionalDeps: TradeSkillMaster_AuctionDB, TradeSkillMaster
 ## SavedVariables: BattlePetCageMatch_Data, BattlePetCageMatch_Options
 
 #Libraries

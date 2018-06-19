@@ -28,6 +28,7 @@ local playerNme
 local realmName
 
 local TSM_LOADED =  IsAddOnLoaded("TradeSkillMaster") and IsAddOnLoaded("TradeSkillMaster_AuctionDB")
+local PJE_LOADED =  IsAddOnLoaded("PetJournalEnhanced") 
 
 
 ---Initilizes of data sources from TSM for the options dropdown
@@ -352,22 +353,50 @@ function pricelookup(itemID)
 	return tooltip, rank
 end
 
+
 ---Updates the icons on Pet Journal to tag caged pets
  function UpdatePetList_Icons()
-	local scrollFrame = PetJournalEnhancedListScrollFrame or PetJournalListScrollFrame
+ 	if not PetJournal:IsVisible() then return end
+
+	local scrollFrame = (Rematch and RematchPetListScrollFrame:IsVisible() and RematchPetListScrollFrame)
+			or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and PetJournalEnhancedListScrollFrame)
+			or (PetJournalListScrollFrame) 
+
+	local roster = Rematch and Rematch.Roster
+
 	local offset = HybridScrollFrame_GetOffset(scrollFrame)
 	local buttons = scrollFrame.buttons
 	local numPets = C_PetJournal.GetNumPets()
 	local showPets = true
 	if  ( numPets < 1 ) then return end  --If there are no Pets then nothing needs to be done.
 
-	local numDisplayedPets = C_PetJournal.GetNumPets()
+	local numDisplayedPets =(Rematch and RematchPetListScrollFrame:IsVisible() and  #roster.petList)
+		or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and Sorting:GetNumPets()) 
+		or C_PetJournal.GetNumPets()
+
 	for i=1, #buttons do
 		local button = buttons[i]
 		local displayIndex = i + offset
-		if ( displayIndex <= numDisplayedPets and showPets ) then
-			local index = displayIndex
-			local petID,speciesID,_,_,level,_,_,petName,_,_,_,_,_,_,_,tradeable =  C_PetJournal.GetPetInfoByIndex(index)
+		if ( displayIndex <= numDisplayedPets ) then
+
+			local index = (Rematch and RematchPetListScrollFrame:IsVisible() and displayIndex) 
+			or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and Sorting:GetPetByIndex(displayIndex)["index"])  
+			or displayIndex
+
+			local speciesID, level, petName, tradeable
+			local petID = (Rematch and RematchPetListScrollFrame:IsVisible() and roster.petList[index]) or nil
+			local idType = (Rematch and RematchPetListScrollFrame:IsVisible() and Rematch:GetIDType(petID)) or nil
+
+			--Get data from proper indexes based on addon loaded and visable 
+			if Rematch and RematchPetListScrollFrame:IsVisible() and idType=="pet" then -- this is an owned pet
+				speciesID, _, level, _, _, _, _, petName, _, petType, _, _, _, _, _, tradeable = C_PetJournal.GetPetInfoByPetID(petID)
+
+			elseif Rematch and RematchPetListScrollFrame:IsVisible() and idType=="species" then -- speciesID for unowned pets
+				speciesID = petID
+				petName, _, _, _, _, _, _, _, tradeable = C_PetJournal.GetPetInfoBySpeciesID(petID)
+			else 
+				petID,speciesID,_,_,level,_,_,petName,_,_,_,_,_,_,_,tradeable =  C_PetJournal.GetPetInfoByIndex(index)
+			end
 
 			if  button.BP_Cage then
 			else
@@ -503,4 +532,17 @@ function BPCM:OnEnable()
 	hooksecurefunc("BattlePetToolTip_Show", function(species, level, quality, health, power, speed, customName)
 		BattlePetTooltip_Show(BattlePetTooltip, species)
 	end)
+
+	--PetJournalEnhanced hooks
+	if IsAddOnLoaded("PetJournalEnhanced") then 
+		hooksecurefunc(PetJournalEnhancedListScrollFrame,"update", UpdatePetList_Icons)	
+		 local PJE = LibStub("AceAddon-3.0"):GetAddon("PetJournalEnhanced")
+		 Sorting = PJE:GetModule(("Sorting"))
+	end
+
+	--Rematch hooks
+	if IsAddOnLoaded("Rematch") then 
+		hooksecurefunc(RematchPetPanel,"UpdateList", UpdatePetList_Icons)
+	end
+	
 end
