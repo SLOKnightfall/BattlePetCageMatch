@@ -15,15 +15,18 @@
 --
 --
 --
+
+
 --	///////////////////////////////////////////////////////////////////////////////////////////
 
-BPCM = LibStub("AceAddon-3.0"):NewAddon("BattlePetCageMatch", "AceEvent-3.0", "AceConsole-3.0", "AceHook-3.0")
+local BPCM = select(2, ...)
+BPCM = LibStub("AceAddon-3.0"):NewAddon(BPCM,"BattlePetCageMatch", "AceEvent-3.0", "AceConsole-3.0", "AceHook-3.0")
 
 
-local bagResults = {};
+BPCM.bagResults = {}
 local globalPetList = {}
 local playerInv_DB
-local Profile
+local Profile 
 local playerNme 
 local realmName
 
@@ -89,6 +92,87 @@ local options = {
 			get = function(info) return Profile.Inv_Tooltips end,
 			width = "full"
 		},
+		Cage_Header = {
+			order = 2.2,
+			name = "Auto Cage Pet Options",
+			type = "header",
+			--set = function(info,val) Profile.Other_Server = val end,
+			--get = function(info) return Profile.Other_Server end,
+			width = "full",
+		},
+		Skip_Caged = {
+			order = 2.3,
+			name = "Skip pets that have already been caged",
+			desc = nil,
+			type = "toggle",
+			set = function(info,val) Profile.Skip_Caged = val end,
+			get = function(info) return Profile.Skip_Caged end,
+			width = "full"
+		},
+		Favorite_Only = {
+			order = 2.4,
+			name = "How to handle Favorite pets",
+			desc = nil,
+			type = "select",
+			set = function(info,val) Profile.Favorite_Only = val end,
+			get = function(info) return Profile.Favorite_Only end,
+			width = "full",
+			values = {["include"] = "Include", ["ignore"] ="Ignore", ["only"] = "Only"}
+		},
+		Cage_Max_Level = {
+			order = 2.5,
+			name = "Max Level to cage",
+			desc = "Skips any level over this value",
+			type = "select",
+			type = "range",
+			set = function(info,val) Profile.Cage_Max_Level = val end,
+			get = function(info) return Profile.Cage_Max_Level end,
+			width = "normal",
+			min = 1,
+			max = 25,
+			step = 1,
+		},
+		Cage_Max_Quantity = {
+			order = 2.5,
+			name = "Only caged when over Quantity",
+			desc = "Skips any level over this value",
+			type = "select",
+			type = "range",
+			set = function(info,val) Profile.Cage_Max_Quantity = val end,
+			get = function(info) return Profile.Cage_Max_Quantity end,
+			width = "normal",
+			min = 1,
+			max = 3,
+			step = 1,
+		},
+		Skip_Auction = {
+			order = 2.4,
+			name = "Skip pets that current character has active auctions for. (Requires TSM)",
+			desc = nil,
+			type = "toggle",
+			set = function(info,val) Profile.Skip_Auction = val end,
+			get = function(info) return Profile.Skip_Auction end,
+			width = "full"
+		},
+		Cage_Max_Price = {
+			order = 2.5,
+			name = "Only Cage over a specific price (Requires TSM)",
+			desc = nil,
+			type = "toggle",
+			set = function(info,val) Profile.Cage_Max_Price = val end,
+			get = function(info) return Profile.Cage_Max_Price end,
+			width = "full"
+		},
+		Cage_Max_Price_Value = {
+			order = 2.5,
+			name = "Gold",
+			desc = "Gold limit for the filter.",
+			type = "input",
+			set = function(info,val) Profile.Cage_Max_Price_Value = val end,
+			get = function(info) return Profile.Cage_Max_Price_Value end,
+			width = "normal"
+		},
+
 		TSM_Header = {
 			order = 3,
 			name = "TSM Data Options",
@@ -202,6 +286,13 @@ local defaults = {
 		TSM_Rank_Medium = 2,
 		TSM_Rank_High = 5,
 		Inv_Tooltips = true,
+		Skip_Caged = true,
+		Skip_Auction = true,
+		Favorite_Only = "include",
+		Cage_Max_Level = 1,
+		Cage_Max_Price = false,
+		Cage_Max_Price_Value = 100,
+		Cage_Max_Quantity = 1,
 	}
 }
 
@@ -224,8 +315,8 @@ end
 ---Scans the players bags and logs any caged battle pets
 local function BPScanBags()
 	wipe(playerInv_DB)
-	wipe(bagResults)
-	bagResults = {}
+	wipe(BPCM.bagResults )
+	BPCM.bagResults = {}
 	for t=0,4 do
 		local slots = GetContainerNumSlots(t);
 		if (slots > 0) then
@@ -238,12 +329,12 @@ local function BPScanBags()
 				--printable = gsub(itemLink, "\124", "\124\124");
 
 				speciesID = tonumber(speciesID)
-				bagResults[speciesID]= bagResults[speciesID] or {}
-				bagResults[speciesID]["count"] = (bagResults[speciesID]["count"] or 0) + 1
-				bagResults[speciesID]["data"] = bagResults[speciesID]["data"] or {}
-				tinsert(bagResults[speciesID]["data"],itemLink )
+				BPCM.bagResults [speciesID]= BPCM.bagResults [speciesID] or {}
+				BPCM.bagResults [speciesID]["count"] = (BPCM.bagResults [speciesID]["count"] or 0) + 1
+				BPCM.bagResults [speciesID]["data"] = BPCM.bagResults [speciesID]["data"] or {}
+				tinsert(BPCM.bagResults [speciesID]["data"],itemLink )
 	
-				playerInv_DB[speciesID] = bagResults[speciesID]
+				playerInv_DB[speciesID] = BPCM.bagResults [speciesID]
 				end
 			end
 		end	
@@ -291,9 +382,9 @@ function BuildToolTip(frame)
 
 	if frame.cage then
 
-		frame.tooltip = "Inventory: "..bagResults[frame.speciesID].count.. "- L:"
+		frame.tooltip = "Inventory: "..BPCM.bagResults [frame.speciesID].count.. "- L:"
 
-		for _, itemLink in ipairs(bagResults[frame.speciesID].data)do
+		for _, itemLink in ipairs(BPCM.bagResults [frame.speciesID].data)do
 			local _, _, _, _, _,level  = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")
 			frame.tooltip = frame.tooltip ..level..", "
 		end
@@ -414,7 +505,7 @@ end
 			if tradeable then 
 			--Set Cage icon info
 				button.BP_Cage:Hide()
-				if bagResults[speciesID] then 
+				if BPCM.bagResults [speciesID] then 
 					button.BP_Cage:SetNormalTexture("Interface/ICONS/INV_Pet_PetTrap01")
 					button.BP_Cage.cage = true;
 					button.BP_Cage.speciesID = speciesID
@@ -511,7 +602,8 @@ function BPCM:OnInitialize()
 	BattlePetCageMatch_Data[realmName][playerNme] =  BattlePetCageMatch_Data[realmName][playerNme] or {}
 	playerInv_DB = BattlePetCageMatch_Data[realmName][playerNme] 
 
-	Profile = self.db.global 
+	BPCM.Profile = self.db.global 
+	Profile = BPCM.Profile
 end
 
 

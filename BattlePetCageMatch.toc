@@ -21,6 +21,9 @@ Libs\AceHook-3.0\AceHook-3.0.xml
 Libs\AceLocale-3.0\AceLocale-3.0.xml
 Libs\AceConfig-3.0\AceConfig-3.0.xml
 
+#Locale
+Locale\enUS.lua
 
 #Core Files
 BattlePetCageMatch.lua
+CagePets.lua
