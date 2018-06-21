@@ -20,7 +20,8 @@
 --	///////////////////////////////////////////////////////////////////////////////////////////
 
 local BPCM = select(2, ...)
-BPCM = LibStub("AceAddon-3.0"):NewAddon(BPCM,"BattlePetCageMatch", "AceEvent-3.0", "AceConsole-3.0", "AceHook-3.0")
+local addonName, addon = ...
+BPCM = LibStub("AceAddon-3.0"):NewAddon(addon,"BattlePetCageMatch", "AceEvent-3.0", "AceConsole-3.0", "AceHook-3.0")
 
 
 BPCM.bagResults = {}
@@ -30,13 +31,15 @@ local Profile
 local playerNme 
 local realmName
 
+local L = LibStub("AceLocale-3.0"):GetLocale("BattlePetCageMatch")
+
 local TSM_LOADED =  IsAddOnLoaded("TradeSkillMaster") and IsAddOnLoaded("TradeSkillMaster_AuctionDB")
 local PJE_LOADED =  IsAddOnLoaded("PetJournalEnhanced") 
 
 
 ---Initilizes of data sources from TSM for the options dropdown
 --Return:  sources - table of data sources available
-local function TSM_Source()
+function BPCM:TSM_Source()
 	local sources
 	if TSM_LOADED then 
 		sources = TSMAPI:GetPriceSources()
@@ -48,244 +51,353 @@ local function TSM_Source()
 end
 
 --ACE3 Options Constuctor
+--Saved Variables Defaults
+
+
+
+
+
 local options = {
-    name = "BattlePetCageMatch",
-    handler = BattlePetCageMatch,
-    type = 'group',
+	name = "BattlePetCageMatch",
+	handler = BattlePetCageMatch,
+	type = 'group',
+	childGroups = "tab",
+	inline = true,
 	args = {
-		Options_Header = {
-			order = 0,
+		settings={
 			name = "Options",
-			
-			type = "header",
-			--set = function(info,val) Profile.Other_Server = val end,
-			--get = function(info) return Profile.Other_Server end,
-			width = "full",
-		},
+			type = "group",
+			--inline = true,
+			order = 0,
+			args={
+				Options_Header = {
+					order = 0,
+					name = L.OPTIONS_HEADER,
+					
+					type = "header",
+					--set = function(info,val) Profile.Other_Server = val end,
+					--get = function(info) return Profile.Other_Server end,
+					width = "full",
+				},
+				Tradeable = {
+					order = 1,
+					name = L.OPTIONS_TRADEABLE ,
+					desc = L.OPTIONS_TRADEABLE_TOOLTIP,
+					type = "toggle",
+					set = function(info,val) Profile.No_Trade = val end,
+					get = function(info) return Profile.No_Trade end,
+					width = "full",
+				},
 
-		Tradeable = {
-			order = 1,
-			name = "Show Non-tradeable icon",
-			desc = "Toggles a marker for pets tha can not be caged",
-			type = "toggle",
-			set = function(info,val) Profile.No_Trade = val end,
-			get = function(info) return Profile.No_Trade end,
-			width = "full",
-		},
+				GlobalList = {
+					order = 2,
+					name = L.OPTIONS_GLOBAL_LIST,
+					desc = L.OPTIONS_GLOBAL_LIST_TOOLTIP,
+					type = "toggle",
+					set = function(info,val) Profile.Other_Server = val end,
+					get = function(info) return Profile.Other_Server end,
+					width = "full"
+				},
+				Inv_Tooltips = {
+					order = 3,
+					name = L.OPTIONS_INV_TOOLTIPS ,
+					desc = nil,
+					type = "toggle",
+					set = function(info,val) Profile.Inv_Tooltips = val end,
+					get = function(info) return Profile.Inv_Tooltips end,
+					width = "full"
+				},
+				Cage_Header = {
+					order = 4,
+					name = L.OPTIONS_CAGE_HEADER,
+					type = "header",
+					width = "full",
+				},
+				Cage_Output = {
+					order = 5,
+					name = L.OPTIONS_CAGE_OUTPUT,
+					desc = nil,
+					type = "toggle",
+					set = function(info,val) Profile.Cage_Output = val end,
+					get = function(info) return Profile.Cage_Output end,
+					width = "full"
+				},
+				Cage_Once = {
+					order = 5,
+					name = L.OPTIONS_CAGE_ONCE,
+					desc = nil,
+					type = "toggle",
+					set = function(info,val) Profile.Cage_Once = val end,
+					get = function(info) return Profile.Cage_Once end,
+					width = "full"
+				},
+				Skip_Caged = {
+					order = 5.1,
+					name = L.OPTIONS_SKIP_CAGED ,
+					desc = nil,
+					type = "toggle",
+					set = function(info,val) Profile.Skip_Caged = val end,
+					get = function(info) return Profile.Skip_Caged end,
+					width = "full"
+				},
+				Favorite_Only = {
+					order = 6,
+					name = L.OPTIONS_FAVORITE_LIST,
+					desc = nil,
+					type = "select",
+					set = function(info,val) Profile.Favorite_Only = val end,
+					get = function(info) return Profile.Favorite_Only end,
+					width = "normal",
+					values = {["include"] = "Include in scan", ["ignore"] ="Ignore in scan", ["only"] = "Only scan favorites"}
+				},
+				Linebreak_1 = {
+					order = 6.1,
+					name = "",
+					desc = nil,
+					type = "description",
+					width = "double",
 
+				},
+				Cage_Max_Level = {
+					order = 7,
+					name = L.OPTIONS_CAGE_MAX_LEVEL,
+					desc = OPTIONS_CAGE_MAX_LEVEL_TOOLTIP,
+					type = "select",
+					type = "range",
+					set = function(info,val) Profile.Cage_Max_Level = val end,
+					get = function(info) return Profile.Cage_Max_Level end,
+					width = "double",
+					min = 1,
+					max = 25,
+					step = 1,
+				},
+				Cage_Max_Quantity = {
+					order = 8,
+					name = L.OPTIONS_CAGE_MAX_QUANTITY,
+					desc = L.OPTIONS_CAGE_MAX_QUANTITY_TOOLTIP,
+					type = "select",
+					type = "range",
+					set = function(info,val) Profile.Cage_Max_Quantity = val end,
+					get = function(info) return Profile.Cage_Max_Quantity end,
+					width = "double",
+					min = 1,
+					max = 3,
+					step = 1,
+				},
+				Skip_Auction = {
+					order = 9,
+					name = L.OPTIONS_SKIP_AUCTION ,
+					desc = nil,
+					type = "toggle",
+					set = function(info,val) Profile.Skip_Auction = val end,
+					get = function(info) return Profile.Skip_Auction end,
+					disabled = not IsAddOnLoaded("TradeSkillMaster") and not IsAddOnLoaded("TradeSkillMaster_AuctionDB"),
+					width = "full"
+				},
+				Cage_Max_Price = {
+					order = 10,
+					name = L.OPTIONS_CAGE_MAX_PRICE,
+					desc = nil,
+					type = "toggle",
+					set = function(info,val) Profile.Cage_Max_Price = val end,
+					get = function(info) return Profile.Cage_Max_Price end,
+					width = "double",
+					disabled = not IsAddOnLoaded("TradeSkillMaster") and not IsAddOnLoaded("TradeSkillMaster_AuctionDB"),
+				},
+				Cage_Max_Price_Value = {
+					order = 11,
+					name = L.OPTIONS_CAGE_MAX_PRICE_VALUE,
+					desc = L.OPTIONS_CAGE_MAX_PRICE_VALUE_TOOLTIP ,
+					type = "input",
+					set = function(info,val) Profile.Cage_Max_Price_Value = val end,
+					get = function(info) return Profile.Cage_Max_Price_Value end,
+					width = "normal",
+					disabled = not IsAddOnLoaded("TradeSkillMaster") and not IsAddOnLoaded("TradeSkillMaster_AuctionDB"),
+				},
+				Handle_PetWhiteList = {
+					order = 12,
+					name = L.OPTIONS_HANDLE_PETWHITELIST ,
+					desc = nil,
+					type = "select",
+					set = function(info,val) Profile.Handle_PetWhiteList = val end,
+					get = function(info) return Profile.Handle_PetWhiteList end,
+					width = "normal",
+					values = {["include"] = "Include after normal scan", ["only"] = "Only cage list", ["disable"] = "Do not use list"}
+				},
+				Linebreak_2 = {
+					order = 12.1,
+					name = "",
+					desc = nil,
+					type = "description",
+					width = "double",
 
-		GlobalList = {
-			order = 2,
-			name = "Flags cages on other Server",
-			desc = "Shows/Hides the List icon on the Pet Journal when cages on other servers are in the DB.",
-			type = "toggle",
-			set = function(info,val) Profile.Other_Server = val end,
-			get = function(info) return Profile.Other_Server end,
-			width = "full"
-		},
-		Inv_Tooltips = {
-			order = 2.1,
-			name = "Add Inventory count to cage tooltip",
-			desc = nil,
-			type = "toggle",
-			set = function(info,val) Profile.Inv_Tooltips = val end,
-			get = function(info) return Profile.Inv_Tooltips end,
-			width = "full"
-		},
-		Cage_Header = {
-			order = 2.2,
-			name = "Auto Cage Pet Options",
-			type = "header",
-			--set = function(info,val) Profile.Other_Server = val end,
-			--get = function(info) return Profile.Other_Server end,
-			width = "full",
-		},
-		Skip_Caged = {
-			order = 2.3,
-			name = "Skip pets that have already been caged",
-			desc = nil,
-			type = "toggle",
-			set = function(info,val) Profile.Skip_Caged = val end,
-			get = function(info) return Profile.Skip_Caged end,
-			width = "full"
-		},
-		Favorite_Only = {
-			order = 2.4,
-			name = "How to handle Favorite pets",
-			desc = nil,
-			type = "select",
-			set = function(info,val) Profile.Favorite_Only = val end,
-			get = function(info) return Profile.Favorite_Only end,
-			width = "full",
-			values = {["include"] = "Include", ["ignore"] ="Ignore", ["only"] = "Only"}
-		},
-		Cage_Max_Level = {
-			order = 2.5,
-			name = "Max Level to cage",
-			desc = "Skips any level over this value",
-			type = "select",
-			type = "range",
-			set = function(info,val) Profile.Cage_Max_Level = val end,
-			get = function(info) return Profile.Cage_Max_Level end,
-			width = "normal",
-			min = 1,
-			max = 25,
-			step = 1,
-		},
-		Cage_Max_Quantity = {
-			order = 2.5,
-			name = "Only caged when over Quantity",
-			desc = "Skips any level over this value",
-			type = "select",
-			type = "range",
-			set = function(info,val) Profile.Cage_Max_Quantity = val end,
-			get = function(info) return Profile.Cage_Max_Quantity end,
-			width = "normal",
-			min = 1,
-			max = 3,
-			step = 1,
-		},
-		Skip_Auction = {
-			order = 2.4,
-			name = "Skip pets that current character has active auctions for. (Requires TSM)",
-			desc = nil,
-			type = "toggle",
-			set = function(info,val) Profile.Skip_Auction = val end,
-			get = function(info) return Profile.Skip_Auction end,
-			width = "full"
-		},
-		Cage_Max_Price = {
-			order = 2.5,
-			name = "Only Cage over a specific price (Requires TSM)",
-			desc = nil,
-			type = "toggle",
-			set = function(info,val) Profile.Cage_Max_Price = val end,
-			get = function(info) return Profile.Cage_Max_Price end,
-			width = "full"
-		},
-		Cage_Max_Price_Value = {
-			order = 2.5,
-			name = "Gold",
-			desc = "Gold limit for the filter.",
-			type = "input",
-			set = function(info,val) Profile.Cage_Max_Price_Value = val end,
-			get = function(info) return Profile.Cage_Max_Price_Value end,
-			width = "normal"
-		},
+				},
+				PetWhiteList = {
+					type = "input",
+					multiline = true,
+					width = "double",
+					name = L.OPTIONS_PETWHITELIST,
+					desc = L.OPTIONS_WHITELLIST_TOOLTIP,
+					order = 13,
+					width = "full",
+					get = function(info)
+						return BPCM.WhiteListDB:ToString();
+					end,
+					set = function(info, value)
+						local itemList = { strsplit("\n", value:trim()) };
+						BPCM.WhiteListDB:Populate(itemList);
+					end,
+						},
+				Handle_PetBlackList = {
+					order = 13.1,
+					name = L.OPTIONS_HANDLE_PETBLACKLIST,
+					desc = L.OPTIONS_HANDLE_PETWHITELIST_TOOLTIP,
+					type = "select",
+					set = function(info,val) if val == 1 then Profile.Handle_PetBlackList = true; else Profile.Handle_PetBlackList = false end; end,
+					get = function(info) if Profile.Handle_PetBlackList  then return 1; else return 2; end; end,
+					width = "normal",
+					values = {[1] = "On", [2] = "Off"}
+				},
+				Linebreak_3 = {
+					order = 13.2,
+					name = "",
+					desc = nil,
+					type = "description",
+					width = "double",
 
-		TSM_Header = {
-			order = 3,
-			name = "TSM Data Options",
-			desc = "Shows/Hides the Coin icon on the Pet Journal",
-			type = "header",
-			--set = function(info,val) Profile.Other_Server = val end,
-			--get = function(info) return Profile.Other_Server end,
-			width = "full",
-		},
-		TSM_Header_Text = {
-			order = 3.1,
-			name = "Requires TSM",
-			type = "description",
-			--set = function(info,val) Profile.Other_Server = val end,
-			--get = function(info) return Profile.Other_Server end,
-			width = "full",
-			image = "Interface/ICONS/INV_Misc_Coin_17",
-		},
-		TSM_Value = {
-			order = 4,
-			name = "Show TSM  Data(Requires TSM)",
-			desc = "Shows/Hides the Coin icon on the Pet Journal",
-			type = "toggle",
-			set = function(info,val) Profile.TSM_Value = val end,
-			get = function(info) return Profile.TSM_Value end,
-			width = "double",
-		},
-		TSM_Market = {
-			order = 5,
-			name = "TSM Source to Use",
-			desc = "TSM Source to get price data.",
-			type = "select",
-			set = function(info,val) Profile.TSM_Market = val end,
-			get = function(info) return Profile.TSM_Market end,
-			width = "normal",
-			values = function() return TSM_Source() end
-		},
-		TSM_Filter = {
-			order = 6,
-			name = "Filter based on price",
-			desc = "Only puts Coin icon when the value is greater than the filter.",
-			type = "toggle",
-			set = function(info,val) Profile.TSM_Filter = val end,
-			get = function(info) return Profile.TSM_Filter end,
-			width = "normal"
-		},
+				},
+				PetBlackList = {
+					type = "input",
+					multiline = true,
+					width = "double",
+					name = L.OPTIONS_PETBLACKLIST,
+					desc = L.OPTIONS_BLACKLIST_TOOLTIP,
+					order = 14,
+					width = "full",
+					get = function(info)
+						return BPCM.BlackListDB:ToString();
+					end,
+					set = function(info, value)
+						local itemList = { strsplit("\n", value:trim()) };
+						BPCM.BlackListDB:Populate(itemList);
+					end,
+						},
 
-		TSM_Filter_Value = {
-			order = 7,
-			name = "Gold",
-			desc = "Gold limit for the filter.",
-			type = "input",
-			set = function(info,val) Profile.TSM_Filter_Value = val end,
-			get = function(info) return Profile.TSM_Filter_Value end,
-			width = "normal"
-		},
+				TSM_Header = {
+					order = 15,
+					name = L.OPTIONS_TSM_HEADER,
+					type = "header",
+					width = "full",
+				},
+				TSM_Header_Text = {
+					order = 16,
+					name = "Requires TSM",
+					type = "description",
+					width = "full",
+					--image = "Interface/ICONS/INV_Misc_Coin_17",
+				},
+				TSM_Value = {
+					order = 17,
+					name = L.OPTIONS_TSM_VALUE,
+					desc = L.OPTIONS_TSM_VALUE_TOOLTIP,
+					type = "toggle",
+					set = function(info,val) Profile.TSM_Value = val end,
+					get = function(info) return Profile.TSM_Value end,
+					width = "double",
+					disabled = not IsAddOnLoaded("TradeSkillMaster") and not IsAddOnLoaded("TradeSkillMaster_AuctionDB"),
+				},
+				TSM_Market = {
+					order = 18,
+					name = L.OPTIONS_TSM_DATASOURCE,
+					--desc = "TSM Source to get price data.",
+					type = "select",
+					set = function(info,val) Profile.TSM_Market = val end,
+					get = function(info) return Profile.TSM_Market end,
+					width = "normal",
+					values = function() return BPCM:TSM_Source() end,
+					disabled = not IsAddOnLoaded("TradeSkillMaster") and not IsAddOnLoaded("TradeSkillMaster_AuctionDB"),
+				},
+				TSM_Filter = {
+					order = 19,
+					name = L.OPTIONS_TSM_FILTER,
+					desc = L.OPTIONS_TSM_FILTER_TOOLTIP,
+					type = "toggle",
+					set = function(info,val) Profile.TSM_Filter = val end,
+					get = function(info) return Profile.TSM_Filter end,
+					width = "normal",
+					disabled = not IsAddOnLoaded("TradeSkillMaster") and not IsAddOnLoaded("TradeSkillMaster_AuctionDB"),
+				},
 
-		TSM_Rank = {
-			order = 8,
-			name = "Value Based Icons",
-			desc = "Toggles the minimap button.",
-			type = "select",
-			type = "toggle",
-			set = function(info,val) Profile.TSM_Rank = val end,
-			get = function(info) return Profile.TSM_Rank end,
-			width = "full"
-		},
-		TSM_Rank_Medium = {
-			order = 9,
-			name = "Value Based Icons",
-			desc = "Toggles the minimap button.",
-			type = "select",
-			type = "range",
-			set = function(info,val) Profile.TSM_Rank_Medium = val end,
-			get = function(info) return Profile.TSM_Rank_Medium end,
-			width = "normal",
-			min = 1,
-			max = 10,
-			step = 1,
-			isPercent = true,
-		},
-		TSM_Rank_High = {
-			order = 10,
-			name = "Value Based Icons",
-			desc = "Toggles the minimap button.",
-			type = "select",
-			type = "range",
-			set = function(info,val) Profile.TSM_Rank_High = val end,
-			get = function(info) return Profile.TSM_Rank_High end,
-			width = "normal",
-			min = 1,
-			max = 10,
-			step = 1,
-			isPercent = true,
-			icon = "Interface/ICONS/INV_Misc_Coin_17",
+				TSM_Filter_Value = {
+					order = 20,
+					name = L.OPTIONS_CAGE_MAX_PRICE_VALUE,
+					desc = L.OPTIONS_CAGE_MAX_PRICE_VALUE_TOOLTIP,
+					type = "input",
+					set = function(info,val) Profile.TSM_Filter_Value = val end,
+					get = function(info) return Profile.TSM_Filter_Value end,
+					width = "normal",
+					disabled = not IsAddOnLoaded("TradeSkillMaster") and not IsAddOnLoaded("TradeSkillMaster_AuctionDB"),
+				},
+
+				TSM_Rank = {
+					order = 21,
+					name = L.OPTIONS_TSM_RANK,
+					type = "select",
+					type = "toggle",
+					set = function(info,val) Profile.TSM_Rank = val end,
+					get = function(info) return Profile.TSM_Rank end,
+					width = "full",
+					disabled = not IsAddOnLoaded("TradeSkillMaster") and not IsAddOnLoaded("TradeSkillMaster_AuctionDB"),
+				},
+				TSM_Rank_Medium = {
+					order = 22,
+					name = L.OPTIONS_TSM_RANK_MEDIUM,
+					type = "select",
+					type = "range",
+					set = function(info,val) Profile.TSM_Rank_Medium = val end,
+					get = function(info) return Profile.TSM_Rank_Medium end,
+					width = "normal",
+					min = 1,
+					max = 10,
+					step = 1,
+					isPercent = true,
+					disabled = not IsAddOnLoaded("TradeSkillMaster") and not IsAddOnLoaded("TradeSkillMaster_AuctionDB"),
+				},
+				TSM_Rank_High = {
+					order = 23,
+					name = L.OPTIONS_TSM_RANK_HIGH,
+					type = "select",
+					type = "range",
+					set = function(info,val) Profile.TSM_Rank_High = val end,
+					get = function(info) return Profile.TSM_Rank_High end,
+					width = "normal",
+					min = 1,
+					max = 10,
+					step = 1,
+					isPercent = true,
+					icon = "Interface/ICONS/INV_Misc_Coin_17",
+					disabled = not IsAddOnLoaded("TradeSkillMaster") and not IsAddOnLoaded("TradeSkillMaster_AuctionDB"),
+				},
+			},
 		},
 
 	},
 }
 
---Saved Variables Defaults
 local defaults = {
-	global ={
+	profile ={
 		No_Trade = true,
 		TSM_Value = true,
 		Other_Server = true,
 		TSM_Filter = false,
 		TSM_Filter_Value = 0,
-		TSM_Market = 1,
+		TSM_Market = "DBMarket",
 		TSM_Rank = true,
 		TSM_Rank_Medium = 2,
 		TSM_Rank_High = 5,
 		Inv_Tooltips = true,
+		Cage_Output = false,
+		Cage_Once = true,
 		Skip_Caged = true,
 		Skip_Auction = true,
 		Favorite_Only = "include",
@@ -293,13 +405,16 @@ local defaults = {
 		Cage_Max_Price = false,
 		Cage_Max_Price_Value = 100,
 		Cage_Max_Quantity = 1,
+		Handle_PetWhiteList = "include",
+		Pet_Whitelist = {},
+		Handle_PetBlackList = true,
+		Pet_Blacklist = {},
 	}
 }
 
 
-
 ---Builds a list of saved data keyed by pet species id
-function BuildDBLookupList()
+function BPCM:BuildDBLookupList()
 	globalPetList = globalPetList or {}
 	for realm, realm_data in pairs(BattlePetCageMatch_Data) do
 		for player, player_data in pairs(realm_data) do
@@ -313,7 +428,7 @@ end
 
 
 ---Scans the players bags and logs any caged battle pets
-local function BPScanBags()
+function BPCM:BPScanBags()
 	wipe(playerInv_DB)
 	wipe(BPCM.bagResults )
 	BPCM.bagResults = {}
@@ -340,14 +455,15 @@ local function BPScanBags()
 		end	
 		
 	end
-	BuildDBLookupList()
+	BPCM:BuildDBLookupList()
 end
+
 
 ---Searches database for pet data
 --Pram: PetID(num) - ID of the pet to look up
 --Pram: Ignore(bool) - ignore data for current player
 --Return:  string - String containing findings
-function SearchList(PetID, ignore)
+function BPCM:SearchList(PetID, ignore)
 	local string = nil
 	if globalPetList[PetID] then
 		for player, data in pairs(globalPetList[PetID])do
@@ -369,15 +485,15 @@ end
 
 ---Builds tooltip data
 --Pram: frame - Name of frame to attach tooltip to 
-function BuildToolTip(frame)
+function BPCM:BuildToolTip(frame)
 	GameTooltip:SetOwner(frame, "ANCHOR_LEFT");
 
 	if frame.display then
-		frame.tooltip = SearchList(frame.speciesID,true) or nil
+		frame.tooltip = BPCM:SearchList(frame.speciesID,true) or nil
 	end
 
 	if frame.petlink then
-		frame.tooltip = pricelookup(frame.petlink) or nil
+		frame.tooltip = BPCM:pricelookup(frame.petlink) or nil
 	end
 
 	if frame.cage then
@@ -401,19 +517,19 @@ end
 --Pram: frame - frame that the checkbox should be added to
 --Pram: index - index used to refrence the checkbox that is created created
 --Return:  checkbox - the created checkbox frame
-local function init_button(frame, index)
+function BPCM:init_button(frame, index)
 
-	local checkbox = CreateFrame("Button", "CageMatch"..index, frame, "UICheckButtonTemplate")
-	checkbox:SetPoint("BOTTOMRIGHT")
-	checkbox.SpeciesID = 0
-	checkbox:SetScript("OnClick", function() end)
-	checkbox:SetScript("OnEnter", function (...) BuildToolTip(checkbox); end)
-	checkbox:SetScript("OnLeave", function() GameTooltip:Hide(); end)
+	local buttton = CreateFrame("Button", "CageMatch"..index, frame, "UICheckButtonTemplate")
+	buttton:SetPoint("BOTTOMRIGHT")
+	buttton.SpeciesID = 0
+	buttton:SetScript("OnClick", function() end)
+	buttton:SetScript("OnEnter", function (...) BPCM:BuildToolTip(buttton); end)
+	buttton:SetScript("OnLeave", function() GameTooltip:Hide(); end)
 
-	checkbox:SetButtonState("NORMAL", true) 
-	checkbox:SetWidth(20)
-	checkbox:SetHeight(20)
-	return checkbox
+	buttton:SetButtonState("NORMAL", true) 
+	buttton:SetWidth(20)
+	buttton:SetHeight(20)
+	return buttton
 end
 
 
@@ -421,7 +537,7 @@ end
 --Pram: frame - frame that the checkbox should be added to
 --Pram: index - index used to refrence the checkbox that is created created
 --Return:  checkbox - the created checkbox frame
-function pricelookup(itemID)
+function BPCM:pricelookup(itemID)
 	local tooltip
 	local rank = 1
 	local source = Profile.TSM_Market or "DBMarket"
@@ -446,7 +562,7 @@ end
 
 
 ---Updates the icons on Pet Journal to tag caged pets
- function UpdatePetList_Icons()
+ function BPCM:UpdatePetList_Icons()
  	if not PetJournal:IsVisible() then return end
 
 	local scrollFrame = (Rematch and RematchPetListScrollFrame:IsVisible() and RematchPetListScrollFrame)
@@ -491,10 +607,10 @@ end
 
 			if  button.BP_Cage then
 			else
-				button.BP_Cage = init_button(button, i.."C")
-				button.BP_Value = init_button(button, i.."V")
+				button.BP_Cage = BPCM:init_button(button, i.."C")
+				button.BP_Value = BPCM:init_button(button, i.."V")
 				button.BP_Value:SetNormalTexture("Interface/ICONS/INV_Misc_Coin_19")
-				button.BP_Global= init_button(button, i.."G")
+				button.BP_Global= BPCM:init_button(button, i.."G")
 				button.BP_Global:SetNormalTexture("Interface/ICONS/INV_Misc_Note_04")
 				button.BP_Value:ClearAllPoints();
 				button.BP_Cage:ClearAllPoints();
@@ -515,7 +631,7 @@ end
 				--Set Value icon ifno
 				if TSM_LOADED and Profile.TSM_Value then
 					button.BP_Value.petlink = "p:"..speciesID..":1:2"
-					local pass, rank = pricelookup(button.BP_Value.petlink)
+					local pass, rank = BPCM:pricelookup(button.BP_Value.petlink)
 
 					if Profile.TSM_Filter and not pass then
 						button.BP_Value:Hide()
@@ -534,7 +650,7 @@ end
 				end
 
 				--Set Global icon info
-				if SearchList(speciesID,true) then
+				if BPCM:SearchList(speciesID,true) then
 					button.BP_Global:Show()
 					button.BP_Global.speciesID = speciesID
 					button.BP_Global.display = true
@@ -563,10 +679,9 @@ end
 	end
 end
 
-
-local function BattlePetTooltip_Show(self, speciesID)
+function BPCM:BattlePetTooltip_Show(self, speciesID)
 	local ownedText = self.Owned:GetText() or "" -- C_PetJournal.GetOwnedBattlePetString(species)
-	local source = (Profile.Inv_Tooltips  and SearchList(speciesID) ) or ""
+	local source = (Profile.Inv_Tooltips  and BPCM:SearchList(speciesID) ) or ""
 	if source then
 		local origHeight = self.Owned:GetHeight()
 		self.Owned:SetWordWrap(true)
@@ -585,15 +700,29 @@ end
 
 
 local function UpdateData()
-	BPScanBags()
-	UpdatePetList_Icons()
+	BPCM:BPScanBags()
+	BPCM:UpdatePetList_Icons()
 end
+
+
+---Updates Profile after changes
+function BPCM:RefreshConfig()
+	BPCM.Profile = self.db.profile 
+	Profile = BPCM.Profile
+end
+
 
 ---Ace based addon initilization
 function BPCM:OnInitialize()
 	self.db = LibStub("AceDB-3.0"):New("BattlePetCageMatch_Options", defaults, true)
+	options.args.profiles  = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
+	LibStub("AceConfigRegistry-3.0"):ValidateOptionsTable(options, "BattlePetCageMatch")
 	LibStub("AceConfig-3.0"):RegisterOptionsTable("BattlePetCageMatch", options)
+
 	self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("BattlePetCageMatch", "BattlePetCageMatch")
+	self.db.RegisterCallback(BPCM, "OnProfileChanged", "RefreshConfig")
+	self.db.RegisterCallback(BPCM, "OnProfileCopied", "RefreshConfig")
+	self.db.RegisterCallback(BPCM, "OnProfileReset", "RefreshConfig")
 
 	BattlePetCageMatch_Data = BattlePetCageMatch_Data or {}
 	playerNme = UnitName("player")
@@ -602,8 +731,14 @@ function BPCM:OnInitialize()
 	BattlePetCageMatch_Data[realmName][playerNme] =  BattlePetCageMatch_Data[realmName][playerNme] or {}
 	playerInv_DB = BattlePetCageMatch_Data[realmName][playerNme] 
 
-	BPCM.Profile = self.db.global 
+	BPCM.Profile = self.db.profile 
 	Profile = BPCM.Profile
+
+	BPCM.BlackListDB = BPCM.PetBlacklist:new()
+	BPCM.WhiteListDB = BPCM.PetWhitelist:new()
+	
+
+
 end
 
 
@@ -620,21 +755,22 @@ function BPCM:OnEnable()
 	--Hooking PetJournal functions
 	LoadAddOn("Blizzard_Collections")
 	hooksecurefunc("PetJournal_UpdatePetList", UpdateData)
-	hooksecurefunc(PetJournalListScrollFrame,"update", UpdatePetList_Icons)	
+	hooksecurefunc(PetJournalListScrollFrame,"update", function(...)BPCM:UpdatePetList_Icons(); end)	
 	hooksecurefunc("BattlePetToolTip_Show", function(species, level, quality, health, power, speed, customName)
-		BattlePetTooltip_Show(BattlePetTooltip, species)
+		BPCM:BattlePetTooltip_Show(BattlePetTooltip, species)
 	end)
 
 	--PetJournalEnhanced hooks
 	if IsAddOnLoaded("PetJournalEnhanced") then 
-		hooksecurefunc(PetJournalEnhancedListScrollFrame,"update", UpdatePetList_Icons)	
+		hooksecurefunc(PetJournalEnhancedListScrollFrame,"update", function(...)BPCM:UpdatePetList_Icons(); end)	
 		 local PJE = LibStub("AceAddon-3.0"):GetAddon("PetJournalEnhanced")
 		 Sorting = PJE:GetModule(("Sorting"))
 	end
 
 	--Rematch hooks
 	if IsAddOnLoaded("Rematch") then 
-		hooksecurefunc(RematchPetPanel,"UpdateList", UpdatePetList_Icons)
+		hooksecurefunc(RematchPetPanel,"UpdateList", function(...)BPCM:UpdatePetList_Icons(); end)
 	end
-	
+
+
 end

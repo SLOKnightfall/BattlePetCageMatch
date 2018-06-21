@@ -27,3 +27,4 @@ Locale\enUS.lua
 #Core Files
 BattlePetCageMatch.lua
 CagePets.lua
+List.lua

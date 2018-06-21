@@ -1,44 +1,33 @@
---function CageMe()
-
-
--- TSMAPI.Inventory:GetAuctionQuantity(
-
---end
-
 local BPCM = select(2, ...)
 local Cage = BPCM:NewModule("BPCM", "AceEvent-3.0", "AceHook-3.0")
---local Profile = BPCM.db.global
+local Profile = nil
+
 local L = LibStub("AceLocale-3.0"):GetLocale("BattlePetCageMatch")
 
 local petsToCage = {};
 
---local petCagedPattern = string.gsub(L.BATTLE_PET_NEW_PET, "%%s", ".*Hbattlepet:(%%d+).*");
 
-
-local function TSMPricelookup(pBattlePetID)
-	local Profile = BPCM.db.global
-
-
+local function TSMPricelookup(pBattlePetID,name)
 	if (not IsAddOnLoaded("TradeSkillMaster")) or (not Profile.Cage_Max_Price) then return true end
-
-	return TSMAPI:GetCustomPriceValue(Profile.TSM_Market , "p:"..pBattlePetID..":1:2") >= (Profile.Cage_Max_Price_Value *100*100)
-
+	return (TSMAPI:GetCustomPriceValue(Profile.TSM_Market , "p:"..pBattlePetID..":1:2") or 0) >= (Profile.Cage_Max_Price_Value *100*100)
 end
+
 
 local function TSMAuctionLookup(pBattlePetID)
-	local Profile = BPCM.db.global
-
 	if (not IsAddOnLoaded("TradeSkillMaster")) or (not Profile.Skip_Auction) then return true end
-	return TSMAPI.Inventory:GetAuctionQuantity("p:"..pBattlePetID..":1:2")==0 
+	return TSMAPI.Inventory:GetAuctionQuantity("p:"..pBattlePetID..":1:2") == 0 
 
 end
 
-function Cage.Cage_Message(msg)
-	DEFAULT_CHAT_FRAME:AddMessage("\124cffc79c6eAutoCageing:\124r \124cff69ccf0" .. msg .."\124r");
+
+function Cage:Cage_Message(msg)
+	if Profile.Cage_Output then 
+		DEFAULT_CHAT_FRAME:AddMessage("\124cffc79c6eCageing:\124r \124cff69ccf0" .. msg .."\124r");
+	end
 end
 
-function CageMe(petToCageID)
-	local Profile = BPCM.db.global
+
+function CageMe()
 	C_PetJournal.ClearSearchFilter(); -- Clear filter so we have a full pet list.
 	C_PetJournal.SetPetSortParameter(LE_SORT_BY_LEVEL); -- Sort by level, ensuring higher level pets are encountered first.
 
@@ -53,27 +42,37 @@ function CageMe(petToCageID)
 	for index = 1, owned do -- Loop every pet owned (unowned will be over the offset).
 		local pGuid, pBattlePetID, _, pNickname, pLevel, pIsFav, _, pName, _, _, _, _, _, _, _, pIsTradeable = C_PetJournal.GetPetInfoByIndex(index);
 		local numCollected = C_PetJournal.GetNumCollectedInfo(pBattlePetID)
+		petCache[pName] = pGuid
 
-
-		--if petToCageID == nil or petToCageID == pBattlePetID then
-				if ((pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "only")) or (not pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "ignore")))
-				and pIsTradeable 
-				--and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level))
-				and numCollected >= Profile.Cage_Max_Quantity
-				and ((Profile.Skip_Caged and not BPCM.bagResults[pBattlePetID]) or (not Profile.Skip_Caged and true))
-				and not petCache[pBattlePetID] 
-				and TSMPricelookup(pBattlePetID) 
-				and TSMAuctionLookup(pBattlePetID) then
-					if (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level)) then  --Breaks if included in previous if statement
-						Cage.Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE);
-						table.insert(petsToCage, pGuid);
-						petCache[pBattlePetID] = true
-					end
-				end
-			
-		--end
+		if ((pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "only")) or (not pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "ignore")))
+		and pIsTradeable 
+		--and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level))
+		and numCollected >= Profile.Cage_Max_Quantity
+		and ((Profile.Skip_Caged and not BPCM.bagResults[pBattlePetID]) or (not Profile.Skip_Caged and true))
+		and ((Profile.Handle_PetBlackList and not BPCM.BlackListDB:FindIndex(pName)) or (not Profile.Handle_PetBlackList and true))
+		and ((Profile.Handle_PetWhiteList == "only" and BPCM.WhiteListDB:FindIndex(pName)) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
+		and ((Profile.Cage_Once and not petCache[pBattlePetID] ) or (not Profile.Cage_Once  and true))
+		and TSMPricelookup(pBattlePetID, pName) 
+		and TSMAuctionLookup(pBattlePetID) then
+			if (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level)) then  --Breaks if included in previous if statement
+				Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE)
+				table.insert(petsToCage, pGuid)
+				petCache[pBattlePetID] = true
+			end
+		elseif 	 (Profile.Handle_PetBlackList and  BPCM.BlackListDB:FindIndex(pName)) then
+			Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE_BLACKLIST)
+		end		
 	end
-	print(#petsToCage)
+
+	for pName, pGuid in pairs(petCache) do
+		if type(pName)== "string" and BPCM.WhiteListDB:FindIndex(pName) then
+			Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE_WHITELIST)
+
+			table.insert(petsToCage, pGuid)
+		end
+	end
+
+	Cage:Cage_Message(#petsToCage .. " Pets to Cage")
 end
 
 
@@ -146,7 +145,7 @@ button:SetAttribute("macrotext1", macro) -- text for macro on left click
 ]]--
 
 function Cage:OnEnable()
-
+Profile = BPCM.Profile
  --cage_button = CreateFrame("Button", "only_for_testing", PetJournal, "SecureActionButtonTemplate")
 	-- Add a caging button
 local	cageButton = CreateFrame("Button", "AutoCage_CageButton", PetJournal, "MagicButtonTemplate");
@@ -157,7 +156,7 @@ local	cageButton = CreateFrame("Button", "AutoCage_CageButton", PetJournal, "Mag
 	cageButton:SetWidth(20)
 	cageButton:SetHeight(20)
 	--cageButton:SetText("Cage Pets");
-	cageButton:SetScript("OnClick", function() CageMe() end);
+	cageButton:SetScript("OnClick", function(self, button, down) CageMe() end);
 	cageButton:SetScript("OnEnter",
 		function(self)
 			GameTooltip:SetOwner (self, "ANCHOR_RIGHT");
