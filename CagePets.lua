@@ -39,10 +39,6 @@ function Cage:GeneratePetList()
 	local petCache = {};
 	petsToCage = {};
 
-	if petToCageID ~= nil then
-		petToCageID = tonumber(petToCageID);
-	end
-
 	for index = 1, owned do -- Loop every pet owned (unowned will be over the offset).
 		local pGuid, pBattlePetID, _, pNickname, pLevel, pIsFav, _, pName, _, _, _, _, _, _, _, pIsTradeable = C_PetJournal.GetPetInfoByIndex(index);
 		local numCollected = C_PetJournal.GetNumCollectedInfo(pBattlePetID)
@@ -139,10 +135,11 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
 		local index = eventFrame.petIndex or 2
 		if self.pendingUpdate then
 	
-			if index == #petsToCage then
+			if index > #petsToCage then
 				self.pendingUpdate = false
 				eventFrame.petIndex = nil
 				petsToCage = {}
+				Cage:Cage_Message(L.CAGE_COMPLETE)
 			else
 				Cage:StartCageing(index)
 			end

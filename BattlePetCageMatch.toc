@@ -4,7 +4,7 @@
 ## Game Version: 7.3
 ## Author: SLOKnightfall
 ## Notes: Helper for dealing with Battle Pet Cages
-## OptionalDeps: TradeSkillMaster_AuctionDB, TradeSkillMaster
+## OptionalDeps: TradeSkillMaster_AuctionDB, TradeSkillMaster, Rematch
 ## SavedVariables: BattlePetCageMatch_Data, BattlePetCageMatch_Options
 
 #Libraries
@@ -19,7 +19,7 @@ Libs\AceDBOptions-3.0\AceDBOptions-3.0.xml
 Libs\AceEvent-3.0\AceEvent-3.0.xml
 Libs\AceHook-3.0\AceHook-3.0.xml
 Libs\AceLocale-3.0\AceLocale-3.0.xml
-Libs\AceConfig-3.0\AceConfig-3.0.xml
+libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 
 #Locale
 Locale\enUS.lua

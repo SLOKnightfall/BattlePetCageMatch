@@ -25,6 +25,7 @@ _G["BPCM"] = BPCM
 
 BPCM = LibStub("AceAddon-3.0"):NewAddon(addon,"BattlePetCageMatch", "AceEvent-3.0", "AceConsole-3.0", "AceHook-3.0")
 BPCM.Frame = LibStub("AceGUI-3.0")
+BPCM.DataBroker = LibStub( "LibDataBroker-1.1" )
 BPCM.bagResults = {}
 
 local globalPetList = {}
@@ -34,6 +35,23 @@ local playerNme
 local realmName
 
 local L = LibStub("AceLocale-3.0"):GetLocale("BattlePetCageMatch")
+
+--Registers for LDB addons
+LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {
+	type = "data source",
+	text = addonName,
+	--tooltip = L.AUTO_CAGE_TOOLTIP_1,
+	icon = "Interface/ICONS/INV_Pet_PetTrap01",
+	OnClick = function(self, button, down) 
+		--if (button == "RightButton") then
+		BPCM.Cage:ResetListCheck()
+		--end
+	end,
+	OnTooltipShow = function(tooltip)
+		if not tooltip or not tooltip.AddLine then return end
+			tooltip:AddLine(L.AUTO_CAGE_TOOLTIP_1)
+		end,
+	})
 
 
 ---Initilizes of data sources from TSM for the options dropdown

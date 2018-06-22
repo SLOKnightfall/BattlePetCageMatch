@@ -5,8 +5,19 @@ manual-changelog:
     markup-type: markdown
 
 externals:
-    BattlePetCageMatch/Libs/AceAddon-3.0: https://repos.wowace.com/wow/ace3/trunk/AceAddon-3.0
     BattlePetCageMatch/Libs/LibStub: https://repos.wowace.com/wow/libstub/trunk 
+    BattlePetCageMatch/Libs/CallbackHandler-1.0: https://repos.wowace.com/wow/callbackhandler/trunk/CallbackHandler-1.0
+    BattlePetCageMatch/Libs/AceAddon-3.0: https://repos.wowace.com/wow/ace3/trunk/AceAddon-3.0
+    BattlePetCageMatch/Libs/AceConsole-3.0: https://repos.wowace.com/wow/ace3/trunk/AceConsole-3.0
+    BattlePetCageMatch/Libs/AceGUI-3.0: https://repos.wowace.com/wow/ace3/trunk/AceGUI-3.0
+    BattlePetCageMatch/Libs/AceConfig-3.0: https://repos.wowace.com/wow/ace3/trunk/AceConfig-3.0
+    BattlePetCageMatch/Libs/AceDB-3.0: https://repos.wowace.com/wow/ace3/trunk/AceDB-3.0
+    BattlePetCageMatch/Libs/AceDBOptions-3.0: https://repos.wowace.com/wow/ace3/trunk/AceDBOptions-3.0
+    BattlePetCageMatch/Libs/AceEvent-3.0: https://repos.wowace.com/wow/ace3/trunk/AceEvent-3.0
+    BattlePetCageMatch/Libs/AceHook-3.0: https://repos.wowace.com/wow/ace3/trunk/AceHook-3.0
+    BattlePetCageMatch/Libs/AceLocale-3.0: https://repos.wowace.com/wow/ace3/trunk/AceLocale-3.0
+    BattlePetCageMatch/Libs/LibDataBroker-1.1: https://repos.wowace.com/wow/libdatabroker-1-1
+
 
 enable-nolib-creation: no
 
