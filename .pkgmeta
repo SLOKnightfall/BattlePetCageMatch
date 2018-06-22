@@ -23,4 +23,3 @@ enable-nolib-creation: no
 
 ignore:
     - README.md
-    - BattlePetCageMatch/Libs/
