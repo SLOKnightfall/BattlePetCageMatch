@@ -18,6 +18,10 @@ L.OPTIONS_CAGE_HEADER = "Auto Cage Pet Options"
 L.OPTIONS_CAGE_OUTPUT = "Print Cage Scan output text"
 L.OPTIONS_CAGE_ONCE = "Cage only 1 of any pet"
 L.OPTIONS_SKIP_CAGED = "Skip pets that have already been caged"
+L.OPTIONS_INCOMPLETE_LIST = "How to Handle Interupted Auto Cage Lists"
+L.OPTIONS_INCOMPLETE_LIST_1 = "Create New List"
+L.OPTIONS_INCOMPLETE_LIST_2 = "Continue Old List"
+L.OPTIONS_INCOMPLETE_LIST_3 = "Prompt"
 L.OPTIONS_FAVORITE_LIST = "How to handle Favorite pets"
 L.OPTIONS_CAGE_MAX_LEVEL = "Max Level to cage"
 L.OPTIONS_CAGE_MAX_LEVEL_TOOLTIP = "Skips any level over this value"
@@ -51,3 +55,17 @@ L.CAGED_MESSAGE = "Matched pet; caging it for you!"
 L.CAGED_MESSAGE_WHITELIST = "Pet caged due to Whitelist."
 L.CAGED_MESSAGE_BLACKLIST = "Pet ignored due to Blacklist."
 
+L.CONTINUE_CAGEING_DIALOG_TEXT = "Continue Cageing Old List?"
+L.CONTINUE_CAGEING_DIALOG_YES = "Yes"
+L.CONTINUE_CAGEING_DIALOG_NO = "No"
+
+L.AUTO_CAGE_TOOLTIP_1 = "Cage Pets"
+L.AUTO_CAGE_TOOLTIP_2 = "Click:  Cage Pets based on rules"
+L.AUTO_CAGE_TOOLTIP_3 = "Shift Click: Options"
+
+L.FULL_INVENTORY = "Inventory is full, stopping."
+
+L.KEYBIND_LEARN = "Learn Caged Pets"
+
+L.BUILD_LEARN_LIST = "Building Learn List" 
+L.LEARN_COMPLETE = "All Possible Pets Have Been Learned."

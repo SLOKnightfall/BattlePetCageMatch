@@ -1,6 +1,5 @@
 ﻿local BPCM = select(2, ...)
 
-
 BPCM.List = {
 	Table = {},
 	Title = "Generic List",
@@ -8,7 +7,6 @@ BPCM.List = {
 };
 
 local List = BPCM.List
-
 local Table = {};
 
 function List:new (o)
@@ -19,6 +17,7 @@ function List:new (o)
 	return o;
 end
 
+
 function List:TableCount(theTable)
 	local count = 0;
 	for index, value in pairs(theTable) do
@@ -27,25 +26,16 @@ function List:TableCount(theTable)
 	return count;
 end
 
+
 function List:GetTitle()
 	return "|c"..tostring(self.TitleColor)..tostring(self.Title).."|r";
 end
 
-function List:PrintDG(text)
-		print(tostring(text));
-end
-
-function List:PrintImportantDG(text)
-	print(tostring(text));	
-end
 
 function List:Print(text)
-	List:PrintDG(self:GetTitle()..tostring(text));
+	print(self:GetTitle()..tostring(text));
 end
 
-function List:PrintImportant(text)
-	List:PrintImportantDG(self:GetTitle()..tostring(text));
-end
 
 function List:Count()
 	return List:TableCount(self:GetTable());
@@ -58,13 +48,14 @@ function List:Set(item, value)
 	self:SetTable(table);
 end
 
+
 function List:Clear()
 	self:SetTable({});
 end
 
+
 function List:FindIndex(indexToFind)
 	if not indexToFind then
-	--print("DF")
 		return;
 	end
 	for index, value in pairs(self:GetTable()) do
@@ -76,6 +67,7 @@ function List:FindIndex(indexToFind)
 	end
 end
 
+
 function List:FindIndexByValue(valueToFind)
    	for index, value in pairs(self:GetTable()) do
 		if value == valueToFind then
@@ -84,9 +76,11 @@ function List:FindIndexByValue(valueToFind)
 	end
 end
 
+
 function List:Contains(item)
 	return self:FindIndex(item) ~= nil;
 end
+
 
 function List:Populate(items)
 	local table = {};
@@ -99,6 +93,7 @@ function List:Populate(items)
 	self:Print(" updated.");
 end
 
+
 function List:ToString()
 	local list = "";
 	for index = 0, self:Count() do
@@ -110,15 +105,14 @@ function List:ToString()
 	return list;
 end
 
+
 function List:GetTable()
 	return Table;
 end
 
+
 function List:SetTable(value)
 	Table = value;
-end
-
-function List:ShowHelp()
 end
 
 
@@ -128,6 +122,7 @@ BPCM.PetBlacklist = List:new {
 }
 local PetBlacklist = BPCM.PetBlacklist 
 
+
 function PetBlacklist:new (o)
 	o = o or {};
 	setmetatable(o, PetBlacklist);
@@ -135,19 +130,23 @@ function PetBlacklist:new (o)
 	return o;
 end
 
+
 function PetBlacklist:GetTable()
 	return BPCM.Profile.Pet_Blacklist;
 end
 
+
 function PetBlacklist:SetTable(value)
 	BPCM.Profile.Pet_Blacklist = value;
 end
+
 
 BPCM.PetWhitelist = List:new {
 	Title = "Pet Whitelist",
 	TitleColor = "FFA9A9A9";
 }
 local PetWhitelist = BPCM.PetWhitelist
+
 
 function PetWhitelist:new (o)
 	o = o or {};
@@ -156,9 +155,11 @@ function PetWhitelist:new (o)
 	return o;
 end
 
+
 function PetWhitelist:GetTable()
 	return BPCM.Profile.Pet_Whitelist;
 end
+
 
 function PetWhitelist:SetTable(value)
 	BPCM.Profile.Pet_Whitelist = value;

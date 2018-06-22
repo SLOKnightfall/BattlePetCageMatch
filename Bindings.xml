@@ -1,0 +1,6 @@
+<Bindings>
+ <Binding name= "BPCM_AUTOCAGE" header="BATTLEPETCAGEMATCH" category="ADDONS">
+    BPCM.Cage:ResetListCheck();
+  </Binding>
+ <Binding name="CLICK BPCM_LearnButton:LeftButton" category="ADDONS"/>
+</Bindings>

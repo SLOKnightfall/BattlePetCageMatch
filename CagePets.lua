@@ -1,20 +1,23 @@
 local BPCM = select(2, ...)
 local Cage = BPCM:NewModule("BPCM", "AceEvent-3.0", "AceHook-3.0")
+BPCM.Cage = Cage
 local Profile = nil
 
 local L = LibStub("AceLocale-3.0"):GetLocale("BattlePetCageMatch")
 
-local petsToCage = {};
+local petsToCage = {}
+local learn_queue = {}
+local learnindex = nil
 
 
-local function TSMPricelookup(pBattlePetID,name)
-	if (not IsAddOnLoaded("TradeSkillMaster")) or (not Profile.Cage_Max_Price) then return true end
+local function TSMPricelookup(pBattlePetID)
+	if (not BPCM.TSM_LOADED) or (not Profile.Cage_Max_Price) then return true end
 	return (TSMAPI:GetCustomPriceValue(Profile.TSM_Market , "p:"..pBattlePetID..":1:2") or 0) >= (Profile.Cage_Max_Price_Value *100*100)
 end
 
 
 local function TSMAuctionLookup(pBattlePetID)
-	if (not IsAddOnLoaded("TradeSkillMaster")) or (not Profile.Skip_Auction) then return true end
+	if (not BPCM.TSM_LOADED) or (not Profile.Skip_Auction) then return true end
 	return TSMAPI.Inventory:GetAuctionQuantity("p:"..pBattlePetID..":1:2") == 0 
 
 end
@@ -27,7 +30,8 @@ function Cage:Cage_Message(msg)
 end
 
 
-function CageMe()
+--Cycles through pet journal and creates a table of pets that match cageing rules
+function Cage:GeneratePetList()
 	C_PetJournal.ClearSearchFilter(); -- Clear filter so we have a full pet list.
 	C_PetJournal.SetPetSortParameter(LE_SORT_BY_LEVEL); -- Sort by level, ensuring higher level pets are encountered first.
 
@@ -42,7 +46,7 @@ function CageMe()
 	for index = 1, owned do -- Loop every pet owned (unowned will be over the offset).
 		local pGuid, pBattlePetID, _, pNickname, pLevel, pIsFav, _, pName, _, _, _, _, _, _, _, pIsTradeable = C_PetJournal.GetPetInfoByIndex(index);
 		local numCollected = C_PetJournal.GetNumCollectedInfo(pBattlePetID)
-		petCache[pName] = pGuid
+		petCache[pName] = (pIsTradeable and pGuid) or nil
 
 		if ((pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "only")) or (not pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "ignore")))
 		and pIsTradeable 
@@ -50,118 +54,133 @@ function CageMe()
 		and numCollected >= Profile.Cage_Max_Quantity
 		and ((Profile.Skip_Caged and not BPCM.bagResults[pBattlePetID]) or (not Profile.Skip_Caged and true))
 		and ((Profile.Handle_PetBlackList and not BPCM.BlackListDB:FindIndex(pName)) or (not Profile.Handle_PetBlackList and true))
-		and ((Profile.Handle_PetWhiteList == "only" and BPCM.WhiteListDB:FindIndex(pName)) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
+		--and ((Profile.Handle_PetWhiteList == "only" and BPCM.WhiteListDB:FindIndex(pName)) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
+
+		and ((Profile.Handle_PetWhiteList == "only" and false) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
 		and ((Profile.Cage_Once and not petCache[pBattlePetID] ) or (not Profile.Cage_Once  and true))
-		and TSMPricelookup(pBattlePetID, pName) 
+		and TSMPricelookup(pBattlePetID) 
 		and TSMAuctionLookup(pBattlePetID) then
 			if (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level)) then  --Breaks if included in previous if statement
 				Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE)
 				table.insert(petsToCage, pGuid)
 				petCache[pBattlePetID] = true
 			end
+
 		elseif 	 (Profile.Handle_PetBlackList and  BPCM.BlackListDB:FindIndex(pName)) then
 			Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE_BLACKLIST)
 		end		
 	end
 
-	for pName, pGuid in pairs(petCache) do
-		if type(pName)== "string" and BPCM.WhiteListDB:FindIndex(pName) then
-			Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE_WHITELIST)
-
-			table.insert(petsToCage, pGuid)
+	if (Profile.Handle_PetWhiteList == "include" or Profile.Handle_PetWhiteList == "only" )then 
+		for pName, pGuid in pairs(petCache) do
+			if type(pName)== "string" and BPCM.WhiteListDB:FindIndex(pName) then
+				Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE_WHITELIST)
+				table.insert(petsToCage, pGuid)
+			end
 		end
 	end
 
 	Cage:Cage_Message(#petsToCage .. " Pets to Cage")
+	if #petsToCage > 0  then 
+		BPCM.eventFrame.petIndex = 1
+		Cage:StartCageing(BPCM.eventFrame.petIndex)
+	end
 end
 
 
+---Initializes the cageing process
+function Cage:StartCageing(index)
+	if not Cage:inventorySpaceCheck() then
+		BPCM.eventFrame.pendingUpdate = false
+		Cage:Cage_Message(L.FULL_INVENTORY)
+		return false
+	end
+
+	--The Cagepet function is delayed slightly so the game does not get overloaded
+	C_Timer.NewTimer(.25, function()C_PetJournal.CagePetByID(petsToCage[index]) end)
+	BPCM.eventFrame.petIndex = index + 1
+	BPCM.eventFrame.pendingUpdate = true
+	return true
+end
 
 
---btn:SetAttribute("target-item", "1 1"); -- ("bag slot")
-local learn_queue = {}
-function learnme()
-print(#learn_queue)
-	if #learn_queue > 0 then
-	--print(learn_queue[1])
-	local t =learn_queue[1][1]
-	local c = learn_queue[1][2]
-	print(t)
-	print(c)
-	--BBBUUU:SetAttribute("target-item", t.." "..c); -- ("bag slot")
-
-	macroBtn:Click()
-		--UseContainerItem(t, c)
-		table.remove(learn_queue,1)
+--Verifies that there is free bag space
+function Cage:inventorySpaceCheck()
+	local free=0
+	for bag=0,NUM_BAG_SLOTS do
+		local bagFree,bagFam = GetContainerNumFreeSlots(bag)
+		if bagFam==0 then
+			free = free + bagFree
+		end
+	end
+	if free == 0 then 
+		return false
 	else
-
-	for t=0,4 do 
-		local slots = GetContainerNumSlots(t);
-		--print(slots)
-		if (slots > 0) then
-			for c=1,slots do
-				local _,_,_,_,_,_,itemLink,_,_,itemID = GetContainerItemInfo(t,c)
-		--print(itemID)
-				if (itemID == 82800) then
-				local _, _, _, _, speciesID,_ , _, _, _, _, _, _, _, _, cageName = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")
-				--local recipeName = select(4, strsplit("|", link))
-				--printable = gsub(itemLink, "\124", "\124\124");
-				print(t.."/"..c)
-
-				local bag = {t,c}
-				tinsert(learn_queue, bag)
-	
-				end
-			end
-		end	
-		
+		return true
 	end
-
-	end
-
 end
 
---[[
+--The auto cageing has to be haneled by an event.  Trying to use an loop overwhelms the game and only a few pets are caged.
+--The frame watches for any time a pet is caged and then tries to cage a new pet after a short delay, which then triggers 
+-- the next pet on the list being caged untill no pets are in the list.  
 
-local macro = "/run for t=0,4 do local slots = GetContainerNumSlots(t);if (slots > 0) then for c=1,slots do local _,_,_,_,_,_,itemLink,_,_,itemID = GetContainerItemInfo(t,c);	print(itemID);if (itemID == 82800) then UseItemByName(itemLink); end	end	end	end"
 
-local button = CreateFrame("Button", "only_for_testing", UIParent, "SecureActionButtonTemplate")
-        button:SetPoint("CENTER", mainframe, "CENTER", 0, 0)
-        button:SetWidth(200)
-        button:SetHeight(50)
-        
-        button:SetText("My Test")
-        button:SetNormalFontObject("GameFontNormalSmall")
+-- Event handling frame.
+local eventFrame = CreateFrame("Button", "BPCM_LearnButton", UIParent, "SecureActionButtonTemplate")
+--local eventFrame = CreateFrame("FRAME")
+BPCM.eventFrame  = eventFrame
+eventFrame.pendingUpdate = false
+eventFrame.petIndex = nil
+eventFrame:RegisterEvent("PET_JOURNAL_PET_DELETED");
+eventFrame:RegisterEvent("UI_ERROR_MESSAGE");
+eventFrame:RegisterEvent("NEW_PET_ADDED");
+eventFrame:SetScript("OnEvent", function(self, event, ...)
+	if event == "PET_JOURNAL_PET_DELETED" then
+		local index = eventFrame.petIndex or 2
+		if self.pendingUpdate then
+	
+			if index == #petsToCage then
+				self.pendingUpdate = false
+				eventFrame.petIndex = nil
+				petsToCage = {}
+			else
+				Cage:StartCageing(index)
+			end
+		end
+	elseif (event == "UI_ERROR_MESSAGE" and select(2,...) == SPELL_FAILED_CANT_ADD_BATTLE_PET )or event == "NEW_PET_ADDED" then
+		learnindex = learnindex + 1
+		Cage:Update_Learn_Queue_Macro()
+	end
+end);
+eventFrame:SetAttribute("type1", "macro") -- left click causes macro		
+eventFrame:SetAttribute("macrotext1","/run BPCM.Create_Learn_Queue()") -- text for macro on left click
 
-	button:SetNormalTexture("Interface/ICONS/INV_Pet_PetTrap01")
-        
-        button:SetNormalTexture("Interface/Buttons/UI-Panel-Button-Up")
-        button:SetHighlightTexture("Interface/Buttons/UI-Panel-Button-Highlight")
-       -- button:SetPushedTexture("Interface/Buttons/UI-Panel-Button-Down")
---button:SetAttribute("target-item", "0 1"); -- ("bag slot")
-   --  button:SetScript("OnClick", function() learnme(); end)
-     button:SetAttribute("type1", "macro") -- left click causes macro
-button:SetAttribute("macrotext1", macro) -- text for macro on left click
-]]--
+--Virtual Button to attach the Learn Keybinding to
+--local learnbutton = CreateFrame("Button", "BPCM_LearnButton", UIParent, "SecureActionButtonTemplate")
+--learnbutton:SetAttribute("type1", "macro") -- left click causes macro		
+--learnbutton:SetAttribute("macrotext1","/run BPCM.Create_Learn_Queue()") -- text for macro on left click
 
-function Cage:OnEnable()
-Profile = BPCM.Profile
- --cage_button = CreateFrame("Button", "only_for_testing", PetJournal, "SecureActionButtonTemplate")
-	-- Add a caging button
-local	cageButton = CreateFrame("Button", "AutoCage_CageButton", PetJournal, "MagicButtonTemplate");
+
+function Cage:CreateButton(parent)
+	local cageButton = CreateFrame("Button", "BPCM_CageButton_"..parent, PetJournal);
 	cageButton:SetNormalTexture("Interface/ICONS/INV_Pet_PetTrap01")
 	cageButton:SetPoint("RIGHT", PetJournalFindBattle, "LEFT", 0, 0);
-	--cageButton:SetPoint("LEFT", PetJournalSummonButton, "RIGHT", 0, 0);
---	cageButton:SetWidth(150);
 	cageButton:SetWidth(20)
 	cageButton:SetHeight(20)
-	--cageButton:SetText("Cage Pets");
-	cageButton:SetScript("OnClick", function(self, button, down) CageMe() end);
+	cageButton:SetScript("OnClick", function(self, button, down) 
+		local Shift = IsShiftKeyDown()
+		if Shift then
+			LibStub("AceConfigDialog-3.0"):Open("BattlePetCageMatch")
+		else
+			Cage:ResetListCheck()
+		end
+	end);
 	cageButton:SetScript("OnEnter",
 		function(self)
 			GameTooltip:SetOwner (self, "ANCHOR_RIGHT");
-			GameTooltip:SetText("Cage Pets", 1, 1, 1);
-			--GameTooltip:AddLine(AutoCage_GetLocalizedString(L_AUTOCAGE_DUPLICATE_PETS_BUTTON_TOOLTIP), nil, nil, nil, true);
+			GameTooltip:SetText(L.AUTO_CAGE_TOOLTIP_1, 1, 1, 1);
+			GameTooltip:AddLine(L.AUTO_CAGE_TOOLTIP_2, nil, nil, nil, true);
+			GameTooltip:AddLine(L.AUTO_CAGE_TOOLTIP_3, nil, nil, nil, true);
 			GameTooltip:Show();
 		end
 	);
@@ -170,7 +189,94 @@ local	cageButton = CreateFrame("Button", "AutoCage_CageButton", PetJournal, "Mag
 			GameTooltip:Hide();
 		end
 	);
+	return cageButton
 end
 
---rematch heal button
---PetJournalFindBattle
+
+function Cage:OnEnable()
+	Profile = BPCM.Profile
+
+	-- Add caging buttons to Pet Journal & Rematch
+	BPCM.cageButton = Cage:CreateButton("PetJournal")
+
+	if IsAddOnLoaded("Rematch") then
+		BPCM.RecountcageButton = Cage:CreateButton("Recount")
+		BPCM.RecountcageButton:SetParent("RematchToolbar")
+		BPCM.RecountcageButton:ClearAllPoints()
+		BPCM.RecountcageButton:SetPoint("RIGHT", RematchHealButton, "LEFT", -10, 0);
+		BPCM.RecountcageButton:SetWidth(32)
+		BPCM.RecountcageButton:SetHeight(32)
+		BPCM.RecountcageButton:Show()
+	end
+end
+
+
+--Dialog Box for user decided handeling of an existing cage list
+StaticPopupDialogs["BPCM_CONTINUE_CAGEING"] = {
+  text = L.CONTINUE_CAGEING_DIALOG_TEXT,
+  button1 = L.CONTINUE_CAGEING_DIALOG_YES,
+  button2 = L.CONTINUE_CAGEING_DIALOG_NO,
+  OnAccept = function ()
+	Cage:StartCageing(BPCM.eventFrame.petIndex)
+  end,
+
+   OnCancel = function (_,reason)
+          Cage:GeneratePetList()
+  end,
+  enterClicksFirstButton  = true,
+  timeout = 0,
+  whileDead = true,
+  hideOnEscape = true,
+  preferredIndex = 3,  -- avoid some UI taint, see http://www.wowace.com/announcements/how-to-avoid-some-ui-taint/
+}
+
+
+--Determines how an existing cage list should be handled
+function Cage:ResetListCheck()
+	if #petsToCage > 0  and Profile.Incomplete_List == "prompt" then
+		StaticPopup_Show("BPCM_CONTINUE_CAGEING")
+	elseif #petsToCage > 0  and Profile.Incomplete_List == "old" then
+		Cage:StartCageing(BPCM.eventFrame.petIndex)
+	else
+		Cage:GeneratePetList()
+	end
+end
+
+
+--Updates Button Macro to use cage based on bag & slot from cage list
+function Cage:Update_Learn_Queue_Macro()
+	if learnindex <= #learn_queue then
+		local macro = "/use "..learn_queue[learnindex][1].." "..learn_queue[learnindex][2]..";"
+		BPCM_LearnButton:SetAttribute("macrotext1", macro)
+	else 
+		BPCM_LearnButton:SetAttribute("macrotext1","/run BPCM.Create_Learn_Queue()")
+		learnindex = nil
+		learn_queue = {}
+		print(L.LEARN_COMPLETE)
+	end
+end
+
+
+--Scans bags and creats a list the bag & slot positison for any found cages
+function BPCM.Create_Learn_Queue()
+	if #learn_queue == 0 then
+	print(L.BUILD_LEARN_LIST)
+		for t=0,4 do 
+			local slots = GetContainerNumSlots(t);
+			if (slots > 0) then
+				for c=1,slots do
+					local _,_,_,_,_,_,itemLink,_,_,itemID = GetContainerItemInfo(t,c)
+					if (itemID == 82800) then
+					--print(t.."/"..c)
+						tinsert(learn_queue, {t,c})
+					end
+				end
+			end	
+			
+		end
+
+		learnindex = 1
+	end
+
+	Cage:Update_Learn_Queue_Macro()
+end
