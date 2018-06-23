@@ -70,3 +70,5 @@ L.KEYBIND_LEARN = "Learn Caged Pets"
 L.BUILD_LEARN_LIST = "Building Learn List" 
 L.LEARN_COMPLETE = "All Possible Pets Have Been Learned."
 L.CAGE_COMPLETE  = "All Pets Caged"
+
+L.BPCM_MOUSEOVER_CAGE = "Cage pet mouse is currently over"
