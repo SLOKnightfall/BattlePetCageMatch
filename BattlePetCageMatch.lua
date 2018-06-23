@@ -22,7 +22,6 @@
 local BPCM = select(2, ...)
 local addonName, addon = ...
 _G["BPCM"] = BPCM
-
 BPCM = LibStub("AceAddon-3.0"):NewAddon(addon,"BattlePetCageMatch", "AceEvent-3.0", "AceConsole-3.0", "AceHook-3.0")
 BPCM.Frame = LibStub("AceGUI-3.0")
 BPCM.DataBroker = LibStub( "LibDataBroker-1.1" )
@@ -52,20 +51,6 @@ LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {
 			tooltip:AddLine(L.AUTO_CAGE_TOOLTIP_1)
 		end,
 	})
-
-
----Initilizes of data sources from TSM for the options dropdown
---Return:  sources - table of data sources available
-function BPCM:TSM_Source()
-	local sources
-	if BPCM.TSM_LOADED  then
-		sources = TSMAPI:GetPriceSources()
-	else
-		sources = {}
-	end
-
-	return sources
-end
 
 
 --ACE3 Options Constuctor
@@ -344,6 +329,26 @@ local options = {
 					values = function() return BPCM:TSM_Source() end,
 					disabled = function(info) return not BPCM.TSM_LOADED end,
 				},
+				TSM_Use_Custom = {
+					order = 18.1,
+					name = L.OPTIONS_TSM_USE_CUSTOM,
+					--desc = L.OPTIONS_TSM_FILTER_TOOLTIP,
+					type = "toggle",
+					set = function(info,val) Profile.TSM_Use_Custom = val end,
+					get = function(info) return Profile.TSM_Use_Custom end,
+					width = "double",
+					disabled = function(info) return not BPCM.TSM_LOADED end,
+				},
+				TSM_Custom = {
+					order = 18.2,
+					name = L.OPTIONS_TSM_CUSTOM,
+					desc = OPTIONS_TSM_CUSTOM_TOOLTIP,
+					type = "input",
+					set = function(info,val) Profile.TSM_Custom = BPCM:TSM_CustomSource(val) end,
+					get = function(info) return Profile.TSM_Custom end,
+					width = "full",
+					disabled = function(info) return not BPCM.TSM_LOADED end,
+				},
 				TSM_Filter = {
 					order = 19,
 					name = L.OPTIONS_TSM_FILTER,
@@ -420,6 +425,8 @@ local defaults = {
 		TSM_Filter = false,
 		TSM_Filter_Value = 0,
 		TSM_Market = "DBMarket",
+		TSM_Use_Custom = false,
+		TSM_Custom = "",
 		TSM_Rank = true,
 		TSM_Rank_Medium = 2,
 		TSM_Rank_High = 5,
@@ -553,7 +560,7 @@ end
 --Pram: index - index used to refrence the checkbox that is created created
 --Return:  checkbox - the created checkbox frame
 function BPCM:init_button(frame, index)
-
+	--frame.dragButton:SetScript(print("ASDFASDF"))
 	local buttton = CreateFrame("Button", "CageMatch"..index, frame, "UICheckButtonTemplate")
 	buttton:SetPoint("BOTTOMRIGHT")
 	buttton.SpeciesID = 0
@@ -575,7 +582,8 @@ end
 function BPCM:pricelookup(itemID)
 	local tooltip
 	local rank = 1
-	local source = Profile.TSM_Market or "DBMarket"
+	local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or Profile.TSM_Market or "DBMarket"
+
 	local priceMarket = TSMAPI:GetCustomPriceValue(source, itemID) or 0 
 
 	if Profile.TSM_Filter and (priceMarket <= (Profile.TSM_Filter_Value *100*100)) then
@@ -587,12 +595,37 @@ function BPCM:pricelookup(itemID)
 	end
 
 	if priceMarket then
-		tooltip = ("%dg %ds %dc"):format(priceMarket / 100 / 100, (priceMarket / 100) % 100, priceMarket % 100)
+		tooltip = TSMAPI:MoneyToString(priceMarket)--("%dg %ds %dc"):format(priceMarket / 100 / 100, (priceMarket / 100) % 100, priceMarket % 100)
 	else
 		tooltip = "No Market Data"
 	end
 
 	return tooltip, rank
+end
+
+
+---Initilizes of data sources from TSM for the options dropdown
+--Return:  sources - table of data sources available
+function BPCM:TSM_Source()
+	local sources
+	if BPCM.TSM_LOADED  then
+		sources = TSMAPI:GetPriceSources()
+	else
+		sources = {}
+	end
+
+	return sources
+end
+
+
+---Uses TSM's API to validate a custom price string to use instead of a stanard market source
+function BPCM:TSM_CustomSource(price)
+	local isValid, err = TSMAPI:ValidateCustomPrice(price)
+	if not isValid then
+		print(string.format(L.TSM_CUSTOM_ERROR, TSMAPI.Design:GetInlineColor("link") .. price .. "|r", err))
+	else
+		return price
+	end
 end
 
 
