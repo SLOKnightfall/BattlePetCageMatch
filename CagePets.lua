@@ -1,6 +1,7 @@
 local BPCM = select(2, ...)
 local Cage = BPCM:NewModule("BPCM", "AceEvent-3.0", "AceHook-3.0")
 BPCM.Cage = Cage
+BPCM.Learn_Click = false
 local Profile = nil
 
 local L = LibStub("AceLocale-3.0"):GetLocale("BattlePetCageMatch")
@@ -120,7 +121,6 @@ end
 --The frame watches for any time a pet is caged and then tries to cage a new pet after a short delay, which then triggers 
 -- the next pet on the list being caged untill no pets are in the list.  
 
-
 -- Event handling frame.
 local eventFrame = CreateFrame("Button", "BPCM_LearnButton", UIParent, "SecureActionButtonTemplate")
 --local eventFrame = CreateFrame("FRAME")
@@ -129,6 +129,7 @@ eventFrame.pendingUpdate = false
 eventFrame.petIndex = nil
 eventFrame:RegisterEvent("PET_JOURNAL_PET_DELETED");
 eventFrame:RegisterEvent("UI_ERROR_MESSAGE");
+eventFrame:RegisterEvent("BAG_UPDATE");
 eventFrame:RegisterEvent("NEW_PET_ADDED");
 eventFrame:SetScript("OnEvent", function(self, event, ...)
 	if event == "PET_JOURNAL_PET_DELETED" then
@@ -144,13 +145,24 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
 				Cage:StartCageing(index)
 			end
 		end
+	elseif (event == "BAG_UPDATE") then
+		BPCM.Create_Learn_Queue()
+
 	elseif (event == "UI_ERROR_MESSAGE" and select(2,...) == SPELL_FAILED_CANT_ADD_BATTLE_PET )or event == "NEW_PET_ADDED" then
-		learnindex = learnindex + 1
-		Cage:Update_Learn_Queue_Macro()
+		if BPCM.Learn_Click then
+			if not learnindex then
+				BPCM.Create_Learn_Queue()
+			else
+			learnindex = learnindex + 1
+			Cage:Update_Learn_Queue_Macro()
+			end
+		end
+		BPCM.Learn_Click = false
 	end
 end);
 eventFrame:SetAttribute("type1", "macro") -- left click causes macro		
-eventFrame:SetAttribute("macrotext1","/run BPCM.Create_Learn_Queue()") -- text for macro on left click
+--eventFrame:SetAttribute("macrotext1","/run BPCM.Create_Learn_Queue();\n/run BPCM.Learn_Click = true;") -- text for macro on left click
+eventFrame:SetAttribute("macrotext1","/use pet cage;\n/run BPCM.Learn_Click = true;") -- text for macro on left click
 
 --Virtual Button to attach the Learn Keybinding to
 --local learnbutton = CreateFrame("Button", "BPCM_LearnButton", UIParent, "SecureActionButtonTemplate")
@@ -243,21 +255,23 @@ end
 --Updates Button Macro to use cage based on bag & slot from cage list
 function Cage:Update_Learn_Queue_Macro()
 	if learnindex <= #learn_queue then
-		local macro = "/use "..learn_queue[learnindex][1].." "..learn_queue[learnindex][2]..";"
+		local macro = "/use "..learn_queue[learnindex][1].." "..learn_queue[learnindex][2]..";\n/run BPCM.Learn_Click = true;"
 		BPCM_LearnButton:SetAttribute("macrotext1", macro)
 	else 
-		BPCM_LearnButton:SetAttribute("macrotext1","/run BPCM.Create_Learn_Queue()")
+		BPCM_LearnButton:SetAttribute("macrotext1","/use pet cage;\n/run BPCM.Learn_Click = true;") -- text for macro on left click
+		--BPCM_LearnButton:SetAttribute("macrotext1","/run BPCM.Create_Learn_Queue();\n/run BPCM.Learn_Click = true;")
 		learnindex = nil
 		learn_queue = {}
-		print(L.LEARN_COMPLETE)
+		--print(L.LEARN_COMPLETE)
 	end
 end
 
 
 --Scans bags and creats a list the bag & slot positison for any found cages
 function BPCM.Create_Learn_Queue()
-	if #learn_queue == 0 then
-	print(L.BUILD_LEARN_LIST)
+	wipe(learn_queue)
+	--if #learn_queue == 0 then
+	--print(L.BUILD_LEARN_LIST)
 		for t=0,4 do 
 			local slots = GetContainerNumSlots(t);
 			if (slots > 0) then
@@ -273,7 +287,7 @@ function BPCM.Create_Learn_Queue()
 		end
 
 		learnindex = 1
-	end
+	--end
 
 	Cage:Update_Learn_Queue_Macro()
 end
