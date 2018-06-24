@@ -13,7 +13,9 @@ local learnindex = nil
 
 local function TSMPricelookup(pBattlePetID)
 	if (not BPCM.TSM_LOADED) or (not Profile.Cage_Max_Price) then return true end
-	return (TSMAPI:GetCustomPriceValue(Profile.TSM_Market , "p:"..pBattlePetID..":1:2") or 0) >= (Profile.Cage_Max_Price_Value *100*100)
+
+	local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or Profile.TSM_Market or "DBMarket"
+	return (TSMAPI:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= (Profile.Cage_Max_Price_Value *100*100)
 end
 
 
