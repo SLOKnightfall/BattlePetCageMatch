@@ -94,12 +94,22 @@ local options = {
 				},
 				Inv_Tooltips = {
 					order = 3,
-					name = L.OPTIONS_INV_TOOLTIPS ,
+					name = L.OPTIONS_INV_TOOLTIPS,
 					desc = nil,
 					type = "toggle",
 					set = function(info,val) Profile.Inv_Tooltips = val end,
 					get = function(info) return Profile.Inv_Tooltips end,
 					width = "full"
+				},
+				Icon_Tooltips = {
+					order = 3.1,
+					name = L.OPTIONS_ICON_TOOLTIPS,
+					desc = nil,
+					type = "multiselect",
+					set = function(info, key, value) Profile.Icon_Tooltips[key] = value end,
+					get = function(info,key) return Profile.Icon_Tooltips[key] end,
+					width = "full",
+					values = {["cage"]= L.OPTIONS_ICON_TOOLTIPS_1, ["value"] = L.OPTIONS_ICON_TOOLTIPS_2, ["db"] = L.OPTIONS_ICON_TOOLTIPS_3},
 				},
 				Cage_Header = {
 					order = 4,
@@ -431,6 +441,9 @@ local defaults = {
 		TSM_Rank_Medium = 2,
 		TSM_Rank_High = 5,
 		Inv_Tooltips = true,
+		Icon_Tooltips = {["db"] = false,
+				["value"] = false,
+				["cage"] = false,},
 		Cage_Output = false,
 		Cage_Once = true,
 		Skip_Caged = true,
@@ -513,11 +526,11 @@ function BPCM:SearchList(PetID, ignore)
 			if (playerNme.." - "..realmName == player) and ignore then
 			else
 				string = string or ""
-				string = string..player..": "..data.count.." - L: "
-				for _, itemLink in ipairs(data.data)do
-					local _, _, _, _, _,level  = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")
-					string= string..level..", \n"
-				end
+				string = string..player..": "..data.count.."\n"-- - L: "
+				--for _, itemLink in ipairs(data.data)do
+					--local _, _, _, _, _,level  = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")
+					--string= string..level..", \n"
+				--end
 			end
 		end
 	end
@@ -528,29 +541,63 @@ end
 ---Builds tooltip data
 --Pram: frame - Name of frame to attach tooltip to
 function BPCM:BuildToolTip(frame)
+	local tooltip_DB = nil
+	local tooltip_Value = nil
+	local tooltip_Cage = nil
+	local tooltip = nil
 	GameTooltip:SetOwner(frame, "ANCHOR_LEFT");
 
 	if frame.display then
-		frame.tooltip = BPCM:SearchList(frame.speciesID,true) or nil
+		tooltip_DB= BPCM:SearchList(frame.speciesID,true)
 	end
 
-	if frame.petlink then
-		frame.tooltip = BPCM:pricelookup(frame.petlink) or nil
+	if BPCM.TSM_LOADED and (frame.petlink) then
+		tooltip_Value = BPCM:pricelookup(frame.petlink)  
 	end
 
 	if frame.cage then
+		tooltip_Cage= "Inventory: "..(BPCM.bagResults[tonumber(frame.speciesID)].count)
+	end
 
-		frame.tooltip = "Inventory: "..BPCM.bagResults [frame.speciesID].count.. "- L:"
+	GameTooltip:SetText((tooltip_Value or tooltip_Cage or tooltip_DB), nil, nil, nil, nil, true)
+	GameTooltip:Show()
+	
+end
 
-		for _, itemLink in ipairs(BPCM.bagResults [frame.speciesID].data)do
-			local _, _, _, _, _,level  = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")
-			frame.tooltip = frame.tooltip ..level..", "
+---Builds tooltip data
+--Pram: frame - Name of frame to attach tooltip to
+function BPCM:BuildIconToolTip(frame)
+	GameTooltip:SetOwner(frame, "ANCHOR_RIGHT");
+	local tooltip_DB = nil
+	local tooltip_Value = nil
+	local tooltip_Cage = nil
+	local tooltip = nil
+	
+	local petlink = frame:GetParent().petlink 
+	if Profile.Icon_Tooltips["db"]then
+		tooltip_DB= BPCM:SearchList(frame:GetParent().speciesID,true) 
+	end
+
+	if BPCM.TSM_LOADED and Profile.Icon_Tooltips["value"] and (petlink) then
+		tooltip_Value = BPCM:pricelookup(petlink) 
+	end
+
+	if Profile.Icon_Tooltips["cage"]  and frame:GetParent().speciesID then
+	local inv = BPCM.bagResults[tonumber(frame:GetParent().speciesID)] or 0
+		if inv == 0 then 
+		else
+
+			tooltip_Cage= "Inventory: "..(BPCM.bagResults[tonumber(frame:GetParent().speciesID)].count)
 		end
 	end
 
-	if frame.tooltip then
-		GameTooltip:SetText(frame.tooltip, nil, nil, nil, nil, true)
+	if (tooltip_Cage or tooltip_Value or tooltip_DB) then
+		GameTooltip:SetText((tooltip_Value or tooltip_Cage or tooltip_DB), nil, nil, nil, nil, true)
+		GameTooltip:AddLine(((tooltip_Value and tooltip_Cage) or tooltip_DB), nil, nil, nil, nil, true)
+		GameTooltip:AddLine((tooltip_Value and tooltip_DB), nil, nil, nil, nil, true)
 	end
+
+	GameTooltip:Show()
 end
 
 
@@ -560,7 +607,6 @@ end
 --Pram: index - index used to refrence the checkbox that is created created
 --Return:  checkbox - the created checkbox frame
 function BPCM:init_button(frame, index)
-	--frame.dragButton:SetScript(print("ASDFASDF"))
 	local buttton = CreateFrame("Button", "CageMatch"..index, frame, "UICheckButtonTemplate")
 	buttton:SetPoint("BOTTOMRIGHT")
 	buttton.SpeciesID = 0
@@ -683,6 +729,7 @@ end
 	local buttons = scrollFrame.buttons
 	local numPets = C_PetJournal.GetNumPets()
 	local showPets = true
+	
 	if  ( numPets < 1 ) then return end  --If there are no Pets then nothing needs to be done.
 
 	local numDisplayedPets =(Rematch and RematchPetListScrollFrame:IsVisible() and  #roster.petList)
@@ -692,6 +739,8 @@ end
 	for i=1, #buttons do
 		local button = buttons[i]
 		local displayIndex = i + offset
+		local button_name = button:GetName()
+		local pet_icon_frame = (Rematch and _G[button_name].Pet) or _G[button_name].dragButton
 		if ( displayIndex <= numDisplayedPets ) then
 
 			local index = (Rematch and RematchPetListScrollFrame:IsVisible() and displayIndex)
@@ -715,6 +764,9 @@ end
 
 			if  button.BP_Cage then
 			else
+				pet_icon_frame:SetScript("OnEnter", function (...) BPCM:BuildIconToolTip(pet_icon_frame); end)
+				pet_icon_frame:SetScript("OnLeave", function() GameTooltip:Hide(); end)
+
 				button.BP_Cage = BPCM:init_button(button, i.."C")
 				button.BP_Value = BPCM:init_button(button, i.."V")
 				button.BP_Value:SetNormalTexture("Interface/ICONS/INV_Misc_Coin_19")
@@ -725,6 +777,8 @@ end
 			if tradeable then
 			--Set Cage icon info
 				button.BP_Cage:Hide()
+				button.petlink = "p:"..speciesID..":1:2"
+				button.speciesID = speciesID
 				if BPCM.bagResults [speciesID] then
 					button.BP_Cage:SetNormalTexture("Interface/ICONS/INV_Pet_PetTrap01")
 					button.BP_Cage.cage = true;
@@ -783,6 +837,8 @@ end
 				button.BP_Global.speciesID = nil
 				button.BP_Global:Hide()
 				button.BP_Global.display = false
+				button.petlink = nil
+				button.speciesID = nil
 			end
 			BPCM:PositionIcons(button)
 			--button.BPCM:Show()
