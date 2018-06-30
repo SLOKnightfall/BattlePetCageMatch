@@ -236,6 +236,26 @@ local options = {
 					width = "normal",
 					disabled = function(info) return not BPCM.TSM_LOADED end,
 				},
+				Cage_Custom_TSM_Price = {
+					order = 11.1,
+					name = L.OPTIONS_TSM_USE_CUSTOM,
+					desc = L.OPTIONS_CAGE_CUSTOM_TOOLTIP,
+					type = "toggle",
+					set = function(info,val) Profile.Cage_Custom_TSM_Price = val end,
+					get = function(info) return Profile.Cage_Custom_TSM_Price end,
+					width = "double",
+					disabled = function(info) return not BPCM.TSM_LOADED end,
+				},
+				Cage_Custom_TSM_Price_Value = {
+					order = 11.2,
+					name = L.OPTIONS_TSM_CUSTOM,
+					desc = L.OPTIONS_TSM_CUSTOM_TOOLTIP,
+					type = "input",
+					set = function(info,val) Profile.Cage_Custom_TSM_Price_Value = BPCM:TSM_CustomSource(val) end,
+					get = function(info) return Profile.Cage_Custom_TSM_Price_Value end,
+					width = "full",
+					disabled = function(info) return not BPCM.TSM_LOADED end,
+				},
 				Handle_PetWhiteList = {
 					order = 12,
 					name = L.OPTIONS_HANDLE_PETWHITELIST ,
@@ -352,7 +372,7 @@ local options = {
 				TSM_Custom = {
 					order = 18.2,
 					name = L.OPTIONS_TSM_CUSTOM,
-					desc = OPTIONS_TSM_CUSTOM_TOOLTIP,
+					desc = L.OPTIONS_TSM_CUSTOM_TOOLTIP,
 					type = "input",
 					set = function(info,val) Profile.TSM_Custom = BPCM:TSM_CustomSource(val) end,
 					get = function(info) return Profile.TSM_Custom end,
@@ -454,6 +474,7 @@ local defaults = {
 		Cage_Max_Price = false,
 		Cage_Max_Price_Value = 100,
 		Cage_Max_Quantity = 1,
+		Cage_Custom_TSM_Price = false,
 		Handle_PetWhiteList = "include",
 		Pet_Whitelist = {},
 		Handle_PetBlackList = true,
@@ -963,7 +984,7 @@ function BPCM:OnEnable()
 		hooksecurefunc(RematchPetPanel,"UpdateList", function(...)BPCM:UpdatePetList_Icons(); end)
 	end
 
-	BPCM.TSM_LOADED =  IsAddOnLoaded("TradeSkillMaster") and IsAddOnLoaded("TradeSkillMaster_AuctionDB")
+	BPCM.TSM_LOADED =  IsAddOnLoaded("TradeSkillMaster") --and IsAddOnLoaded("TradeSkillMaster_AuctionDB")
 	BPCM.PJE_LOADED =  IsAddOnLoaded("PetJournalEnhanced")
 	BPCM.REMATCH_LOADED =  IsAddOnLoaded("Rematch")
 end

@@ -18,6 +18,14 @@ local function TSMPricelookup(pBattlePetID)
 	return (TSMAPI:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= (Profile.Cage_Max_Price_Value *100*100)
 end
 
+local function TSMCustomPricelookup(pBattlePetID)
+	if (not BPCM.TSM_LOADED) or (not Profile.Cage_Custom_TSM_Price) then return true end
+
+	local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or Profile.TSM_Market or "DBMarket"
+	local custom_value = (TSMAPI:GetCustomPriceValue(Profile.Cage_Custom_TSM_Price_Value, "p:"..pBattlePetID..":1:2") or 0)
+	return (TSMAPI:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= custom_value
+end
+
 
 local function TSMAuctionLookup(pBattlePetID)
 	if (not BPCM.TSM_LOADED) or (not Profile.Skip_Auction) then return true end
@@ -58,6 +66,7 @@ function Cage:GeneratePetList()
 		and ((Profile.Handle_PetWhiteList == "only" and false) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
 		and ((Profile.Cage_Once and not petCache[pBattlePetID] ) or (not Profile.Cage_Once  and true))
 		and TSMPricelookup(pBattlePetID) 
+		and TSMCustomPricelookup(pBattlePetID)
 		and TSMAuctionLookup(pBattlePetID) then
 			if (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level)) then  --Breaks if included in previous if statement
 				Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE)
@@ -101,7 +110,6 @@ function Cage:StartCageing(index)
 	BPCM.eventFrame.pendingUpdate = true
 	return true
 end
-
 
 --Verifies that there is free bag space
 function Cage:inventorySpaceCheck()
@@ -241,9 +249,36 @@ StaticPopupDialogs["BPCM_CONTINUE_CAGEING"] = {
   preferredIndex = 3,  -- avoid some UI taint, see http://www.wowace.com/announcements/how-to-avoid-some-ui-taint/
 }
 
+--Dialog Box for user decided handeling of an existing cage list
+StaticPopupDialogs["BPCM_STOP_CAGEING"] = {
+  text = L.STOP_CAGEING_DIALOG_TEXT,
+  button1 = L.CONTINUE_CAGEING_DIALOG_YES,
+  button2 = L.CONTINUE_CAGEING_DIALOG_NO,
+  OnAccept = function ()
+	
+  end,
+
+   OnCancel = function (_,reason)
+          Cage:StartCageing(BPCM.eventFrame.petIndex)
+  end,
+  enterClicksFirstButton  = true,
+  timeout = 0,
+  whileDead = true,
+  hideOnEscape = true,
+  preferredIndex = 3,  -- avoid some UI taint, see http://www.wowace.com/announcements/how-to-avoid-some-ui-taint/
+}
+
 
 --Determines how an existing cage list should be handled
 function Cage:ResetListCheck()
+	--Allows stoping of an auto cage process
+	if BPCM.eventFrame.pendingUpdate == true then
+		BPCM.eventFrame.pendingUpdate = false
+		StaticPopup_Show("BPCM_STOP_CAGEING")
+		return
+	end
+
+
 	if #petsToCage > 0  and Profile.Incomplete_List == "prompt" then
 		StaticPopup_Show("BPCM_CONTINUE_CAGEING")
 	elseif #petsToCage > 0  and Profile.Incomplete_List == "old" then

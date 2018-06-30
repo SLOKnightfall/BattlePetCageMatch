@@ -19,6 +19,7 @@ L.OPTIONS_ICON_TOOLTIPS_1 = "Show current character cage inventory"
 L.OPTIONS_ICON_TOOLTIPS_2 = "Show TSM price"
 L.OPTIONS_ICON_TOOLTIPS_3 = "Show other character's cage inventory"
 L.OPTIONS_CAGE_HEADER = "Auto Cage Pet Options"
+L.OPTIONS_CAGE_CUSTOM_TOOLTIP = "This value will be compaired against the selected TSM source."
 L.OPTIONS_CAGE_OUTPUT = "Print Cage Scan output text"
 L.OPTIONS_CAGE_ONCE = "Cage only 1 of any pet"
 L.OPTIONS_SKIP_CAGED = "Skip pets that have already been caged"
@@ -81,4 +82,7 @@ L.CAGE_COMPLETE  = "All Pets Caged"
 L.BPCM_MOUSEOVER_CAGE = "Cage pet mouse is currently over"
 
 L.TSM_CUSTOM_ERROR ="%s is not a valid custom price and gave the following error: %s"
+
+
+L.STOP_CAGEING_DIALOG_TEXT = "Stop Caging?"
 
