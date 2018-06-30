@@ -9,6 +9,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale("BattlePetCageMatch")
 local petsToCage = {}
 local learn_queue = {}
 local learnindex = nil
+local skil_list = {}
 
 
 local function TSMPricelookup(pBattlePetID)
@@ -163,8 +164,8 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
 			if not learnindex then
 				BPCM.Create_Learn_Queue()
 			else
-			learnindex = learnindex + 1
-			Cage:Update_Learn_Queue_Macro()
+				learnindex = learnindex + 1
+				Cage:Update_Learn_Queue_Macro()
 			end
 		end
 		BPCM.Learn_Click = false
@@ -307,24 +308,28 @@ end
 --Scans bags and creats a list the bag & slot positison for any found cages
 function BPCM.Create_Learn_Queue()
 	wipe(learn_queue)
-	--if #learn_queue == 0 then
-	--print(L.BUILD_LEARN_LIST)
-		for t=0,4 do 
-			local slots = GetContainerNumSlots(t);
-			if (slots > 0) then
-				for c=1,slots do
-					local _,_,_,_,_,_,itemLink,_,_,itemID = GetContainerItemInfo(t,c)
-					if (itemID == 82800) then
-					--print(t.."/"..c)
+	for t=0,4 do 
+		local slots = GetContainerNumSlots(t);
+		if (slots > 0) then
+			for c=1,slots do
+				local _,_,_,_,_,_,itemLink,_,_,itemID = GetContainerItemInfo(t,c)
+				if (itemID == 82800) then
+					local _, _, _, _, speciesId,_ , _, _, _, _, _, _, _, _, cageName = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")
+					local speciesID = tonumber(speciesId)
+					local numCollected, limit = C_PetJournal.GetNumCollectedInfo(speciesId)
+					--only queue if can be learned
+					if numCollected < limit then 
 						tinsert(learn_queue, {t,c})
+					else
+						--print("Skipping ".. cageName..", max already learned")
 					end
 				end
-			end	
-			
-		end
+			end
+		end	
+		
+	end
 
 		learnindex = 1
-	--end
 
 	Cage:Update_Learn_Queue_Macro()
 end
