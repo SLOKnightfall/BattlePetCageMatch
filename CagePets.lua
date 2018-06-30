@@ -53,31 +53,33 @@ function Cage:GeneratePetList()
 
 	for index = 1, owned do -- Loop every pet owned (unowned will be over the offset).
 		local pGuid, pBattlePetID, _, pNickname, pLevel, pIsFav, _, pName, _, _, _, _, _, _, _, pIsTradeable = C_PetJournal.GetPetInfoByIndex(index);
-		local numCollected = C_PetJournal.GetNumCollectedInfo(pBattlePetID)
-		petCache[pName] = (pIsTradeable and pGuid) or nil
+		if pBattlePetID then 
+			local numCollected = C_PetJournal.GetNumCollectedInfo(tonumber(pBattlePetID))
+			petCache[pName] = (pIsTradeable and pGuid) or nil
 
-		if ((pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "only")) or (not pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "ignore")))
-		and pIsTradeable 
-		--and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level))
-		and numCollected >= Profile.Cage_Max_Quantity
-		and ((Profile.Skip_Caged and not BPCM.bagResults[pBattlePetID]) or (not Profile.Skip_Caged and true))
-		and ((Profile.Handle_PetBlackList and not BPCM.BlackListDB:FindIndex(pName)) or (not Profile.Handle_PetBlackList and true))
-		--and ((Profile.Handle_PetWhiteList == "only" and BPCM.WhiteListDB:FindIndex(pName)) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
+			if ((pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "only")) or (not pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "ignore")))
+			and pIsTradeable 
+			--and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level))
+			and numCollected >= Profile.Cage_Max_Quantity
+			and ((Profile.Skip_Caged and not BPCM.bagResults[pBattlePetID]) or (not Profile.Skip_Caged and true))
+			and ((Profile.Handle_PetBlackList and not BPCM.BlackListDB:FindIndex(pName)) or (not Profile.Handle_PetBlackList and true))
+			--and ((Profile.Handle_PetWhiteList == "only" and BPCM.WhiteListDB:FindIndex(pName)) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
 
-		and ((Profile.Handle_PetWhiteList == "only" and false) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
-		and ((Profile.Cage_Once and not petCache[pBattlePetID] ) or (not Profile.Cage_Once  and true))
-		and TSMPricelookup(pBattlePetID) 
-		and TSMCustomPricelookup(pBattlePetID)
-		and TSMAuctionLookup(pBattlePetID) then
-			if (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level)) then  --Breaks if included in previous if statement
-				Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE)
-				table.insert(petsToCage, pGuid)
-				petCache[pBattlePetID] = true
+			and ((Profile.Handle_PetWhiteList == "only" and false) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
+			and ((Profile.Cage_Once and not petCache[pBattlePetID] ) or (not Profile.Cage_Once  and true))
+			and TSMPricelookup(pBattlePetID) 
+			and TSMCustomPricelookup(pBattlePetID)
+			and TSMAuctionLookup(pBattlePetID) then
+				if (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level)) then  --Breaks if included in previous if statement
+					Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE)
+					table.insert(petsToCage, pGuid)
+					petCache[pBattlePetID] = true
+				end
+
+			elseif 	 (Profile.Handle_PetBlackList and  BPCM.BlackListDB:FindIndex(pName)) then
+				Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE_BLACKLIST)
 			end
-
-		elseif 	 (Profile.Handle_PetBlackList and  BPCM.BlackListDB:FindIndex(pName)) then
-			Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE_BLACKLIST)
-		end		
+		end
 	end
 
 	if (Profile.Handle_PetWhiteList == "include" or Profile.Handle_PetWhiteList == "only" )then 

@@ -238,7 +238,7 @@ local options = {
 				},
 				Cage_Custom_TSM_Price = {
 					order = 11.1,
-					name = L.OPTIONS_TSM_USE_CUSTOM,
+					name = L.OPTIONS_TSM_USE_CUSTOM.." (Requirest TSM)",
 					desc = L.OPTIONS_CAGE_CUSTOM_TOOLTIP,
 					type = "toggle",
 					set = function(info,val) Profile.Cage_Custom_TSM_Price = val end,
