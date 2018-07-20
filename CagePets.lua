@@ -145,6 +145,7 @@ eventFrame:RegisterEvent("UI_ERROR_MESSAGE");
 eventFrame:RegisterEvent("BAG_UPDATE");
 eventFrame:RegisterEvent("NEW_PET_ADDED");
 eventFrame:SetScript("OnEvent", function(self, event, ...)
+	if InCombatLockdown() then return end
 	if event == "PET_JOURNAL_PET_DELETED" then
 		local index = eventFrame.petIndex or 2
 		if self.pendingUpdate then
@@ -294,6 +295,7 @@ end
 
 --Updates Button Macro to use cage based on bag & slot from cage list
 function Cage:Update_Learn_Queue_Macro()
+	if InCombatLockdown() then return end
 	if learnindex <= #learn_queue then
 		local macro = "/use "..learn_queue[learnindex][1].." "..learn_queue[learnindex][2]..";\n/run BPCM.Learn_Click = true;"
 		BPCM_LearnButton:SetAttribute("macrotext1", macro)
