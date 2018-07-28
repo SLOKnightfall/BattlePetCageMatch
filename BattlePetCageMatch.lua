@@ -20,6 +20,8 @@
 --	///////////////////////////////////////////////////////////////////////////////////////////
 
 local BPCM = select(2, ...)
+BPCM.TSM = {}
+local TSM_Version = 3
 local addonName, addon = ...
 _G["BPCM"] = BPCM
 BPCM = LibStub("AceAddon-3.0"):NewAddon(addon,"BattlePetCageMatch", "AceEvent-3.0", "AceConsole-3.0", "AceHook-3.0")
@@ -573,7 +575,7 @@ function BPCM:BuildToolTip(frame)
 	end
 
 	if BPCM.TSM_LOADED and (frame.petlink) then
-		tooltip_Value = BPCM:pricelookup(frame.petlink)  
+		tooltip_Value = BPCM:pricelookup(frame.petlink) or "N/A"  
 	end
 
 	if frame.cage then
@@ -651,7 +653,7 @@ function BPCM:pricelookup(itemID)
 	local rank = 1
 	local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or Profile.TSM_Market or "DBMarket"
 
-	local priceMarket = TSMAPI:GetCustomPriceValue(source, itemID) or 0 
+	local priceMarket = BPCM.TSM:GetCustomPriceValue(source, itemID) or 0 
 
 	if Profile.TSM_Filter and (priceMarket <= (Profile.TSM_Filter_Value *100*100)) then
 		return false
@@ -662,7 +664,7 @@ function BPCM:pricelookup(itemID)
 	end
 
 	if priceMarket then
-		tooltip = TSMAPI:MoneyToString(priceMarket)--("%dg %ds %dc"):format(priceMarket / 100 / 100, (priceMarket / 100) % 100, priceMarket % 100)
+		tooltip = BPCM.TSM:MoneyToString(priceMarket)--("%dg %ds %dc"):format(priceMarket / 100 / 100, (priceMarket / 100) % 100, priceMarket % 100)
 	else
 		tooltip = "No Market Data"
 	end
@@ -676,7 +678,7 @@ end
 function BPCM:TSM_Source()
 	local sources
 	if BPCM.TSM_LOADED  then
-		sources = TSMAPI:GetPriceSources()
+		sources = BPCM.TSM:GetPriceSources()
 	else
 		sources = {}
 	end
@@ -687,9 +689,10 @@ end
 
 ---Uses TSM's API to validate a custom price string to use instead of a stanard market source
 function BPCM:TSM_CustomSource(price)
-	local isValid, err = TSMAPI:ValidateCustomPrice(price)
+	local isValid, err = BPCM.TSM:ValidateCustomPrice(price)
 	if not isValid then
-		print(string.format(L.TSM_CUSTOM_ERROR, TSMAPI.Design:GetInlineColor("link") .. price .. "|r", err))
+		--print(string.format(L.TSM_CUSTOM_ERROR, BPCM.TSM:GetInlineColor("link") .. price .. "|r", err))
+		print(err)
 	else
 		return price
 	end
@@ -951,6 +954,13 @@ function BPCM:OnInitialize()
 	BPCM.WhiteListDB = BPCM.PetWhitelist:new()
 end
 
+local function TSMVersionCheck()
+	if TSMAPI_FOUR then 
+		TSM_Version = 4
+	else
+		TSM_Version= 3
+	end
+end
 
 function BPCM:OnEnable()
 	BPCM:RegisterEvent("AUCTION_HOUSE_CLOSED", UpdateData)
@@ -987,6 +997,7 @@ function BPCM:OnEnable()
 	BPCM.TSM_LOADED =  IsAddOnLoaded("TradeSkillMaster") --and IsAddOnLoaded("TradeSkillMaster_AuctionDB")
 	BPCM.PJE_LOADED =  IsAddOnLoaded("PetJournalEnhanced")
 	BPCM.REMATCH_LOADED =  IsAddOnLoaded("Rematch")
+	TSMVersionCheck()
 end
 
 -- Binding Variables
@@ -994,3 +1005,56 @@ BINDING_HEADER_BATTLEPETCAGEMATCH = "Battle Pet Cage Match"
 BINDING_NAME_BPCM_AUTOCAGE = L.AUTO_CAGE_TOOLTIP_1
 BINDING_NAME_BPCM_MOUSEOVER_CAGE = L.BPCM_MOUSEOVER_CAGE
 _G["BINDING_NAME_CLICK BPCM_LearnButton:LeftButton"] = L.KEYBIND_LEARN
+
+
+--Support for TSM3 and updated API for TSM4
+
+
+function BPCM.TSM:GetCustomPriceValue(source, itemID)
+
+	if TSM_Version == 3 then 
+		return TSMAPI:GetCustomPriceValue(source, itemID)
+	else
+		return TSMAPI_FOUR.CustomPrice.GetValue(source, itemID)
+	end
+end
+
+function BPCM.TSM:MoneyToString(priceMarket)
+
+	if TSM_Version == 3 then 
+		return TSMAPI:MoneyToString(priceMarket)
+	else
+		return TSMAPI_FOUR.Money.ToString(priceMarket)
+	end
+end
+
+
+function BPCM.TSM:GetAuctionQuantity(pBattlePetID)
+
+	if TSM_Version == 3 then 
+		return TSMAPI.Inventory:GetAuctionQuantity(pBattlePetID)
+	else
+		return  TSMAPI_FOUR.Inventory.GetAuctionQuantity(pBattlePetID)
+	end
+
+end
+
+function BPCM.TSM:ValidateCustomPrice(price)
+	if TSM_Version == 3 then 
+		return TSMAPI:ValidateCustomPrice(price)
+	else
+		return TSMAPI_FOUR.CustomPrice.Validate(price)
+	end
+end
+
+function BPCM.TSM:GetPriceSources()
+	if TSM_Version == 3 then 
+		return TSMAPI:GetPriceSources()
+	else
+		local table = {}
+		for source in TSMAPI_FOUR.CustomPrice.Iterator() do
+			table[source] = source
+		end
+		return table
+	end
+end
