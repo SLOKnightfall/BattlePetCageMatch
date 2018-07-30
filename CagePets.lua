@@ -30,7 +30,7 @@ end
 
 local function TSMAuctionLookup(pBattlePetID)
 	if (not BPCM.TSM_LOADED) or (not Profile.Skip_Auction) then return true end
-	return BPCM.TSM:GetAuctionQuantity(pBattlePetID)("p:"..pBattlePetID..":1:2") == 0 
+	return BPCM.TSM:GetAuctionQuantity("p:"..pBattlePetID..":1:2") == 0 
 
 end
 
