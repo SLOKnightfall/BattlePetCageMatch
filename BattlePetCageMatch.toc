@@ -1,4 +1,4 @@
-﻿## Interface: 80000
+﻿## Interface: 80205
 ## Title: BattlePetCageMatch (@project-version@)
 ## Version: @project-version@
 ## Game Version: 8
@@ -24,6 +24,7 @@ Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 #Locale
 Locale\enUS.lua
 
+Templates.xml
 #Core Files
 BattlePetCageMatch.lua
 CagePets.lua

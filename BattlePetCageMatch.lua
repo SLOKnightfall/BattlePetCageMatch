@@ -567,10 +567,13 @@ function BPCM:BuildToolTip(frame)
 	local tooltip_Value = nil
 	local tooltip_Cage = nil
 	local tooltip = nil
+
+	local speciesID = (frame:GetParent()):GetParent().speciesID
+	--print(BPCM:SearchList(speciesID,true))
 	GameTooltip:SetOwner(frame, "ANCHOR_LEFT");
 
 	if frame.display then
-		tooltip_DB= BPCM:SearchList(frame.speciesID,true)
+		tooltip_DB = BPCM:SearchList(speciesID, true)
 	end
 
 	if BPCM.TSM_LOADED and (frame.petlink) then
@@ -578,12 +581,11 @@ function BPCM:BuildToolTip(frame)
 	end
 
 	if frame.cage then
-		tooltip_Cage= "Inventory: "..(BPCM.bagResults[tonumber(frame.speciesID)].count)
+		tooltip_Cage= "Inventory: "..(BPCM.bagResults[tonumber(speciesID)].count)
 	end
 
-	GameTooltip:SetText((tooltip_Value or tooltip_Cage or tooltip_DB), nil, nil, nil, nil, true)
-	GameTooltip:Show()
-	
+	GameTooltip:SetText((tooltip_Value or tooltip_Cage or tooltip_DB or ""), nil, nil, nil, nil, true)
+	GameTooltip:Show()	
 end
 
 ---Builds tooltip data
@@ -650,7 +652,7 @@ end
 function BPCM:pricelookup(itemID)
 	local tooltip
 	local rank = 1
-	local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or Profile.TSM_Market or "DBMarket"
+	local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or BPCM.PriceSources[Profile.TSM_Market] or "DBMarket"
 
 	local priceMarket = BPCM.TSM:GetCustomPriceValue(source, itemID) or 0 
 
@@ -701,7 +703,7 @@ end
 function BPCM:PositionIcons(button)
 	local Anchor = "BOTTOMRIGHT"
 	local offset = 0
-	if BPCM.PJE_LOADED and BPCM.REMATCH_LOADED and RematchPetListScrollFrame:IsVisible() then
+	if BPCM.PJE_LOADED and BPCM.REMATCH_LOADED and RematchPetPanel.List.ScrollFrame:IsVisible() then
 		Anchor = "TOPRIGHT"
 		offset = -5
 	else 	
@@ -737,12 +739,50 @@ function BPCM:PositionIcons(button)
 	end
 end
 
+local function SetCageIcon(button, speciesID)
+				button.BP_Cage:Hide()
+				button.petlink = "p:"..speciesID..":1:2"
+				button.speciesID = speciesID
+				if BPCM.bagResults [speciesID] then
+					button.BP_Cage.icon:SetTexture("Interface/ICONS/INV_Pet_PetTrap01")
+					button.BP_Cage.cage = true;
+					button.BP_Cage.speciesID = speciesID
+					button.BP_Cage:Show()
+				else
+					button.BP_Cage:Hide()
+				end
+end
 
+local function SetTSMValue(button, speciesID)
+				if BPCM.TSM_LOADED and Profile.TSM_Value then
+					button.BP_Value.petlink = "p:"..speciesID..":1:2"
+					local pass, rank = BPCM:pricelookup(button.BP_Value.petlink)
+
+					if Profile.TSM_Filter and not pass then
+						button.BP_Value:Hide()
+						button.BP_Value.display = false
+					else
+						if Profile.TSM_Rank and rank == 2 then
+							button.BP_Value.icon:SetTexture("Interface/ICONS/INV_Misc_Coin_18")
+							elseif Profile.TSM_Rank and  rank == 3 then
+							button.BP_Value.icon:SetTexture("Interface/ICONS/INV_Misc_Coin_17")
+						else
+							button.BP_Value.icon:SetTexture("Interface/ICONS/INV_Misc_Coin_19")
+						end
+						button.BP_Value.display = true
+						button.BP_Value:Show()
+					end
+				else
+					button.BP_Value:Hide()
+					button.BP_Value.display = false
+				end
+			end
+local UpdateButton
 ---Updates the icons on Pet Journal to tag caged pets
  function BPCM:UpdatePetList_Icons()
- 	if not PetJournal:IsVisible() then return end
+ 	if not PetJournal:IsVisible() or (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible()) then return end
 
-	local scrollFrame = (Rematch and RematchPetListScrollFrame:IsVisible() and RematchPetListScrollFrame)
+	local scrollFrame = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and RematchPetPanel.List.ScrollFrame)
 			or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and PetJournalEnhancedListScrollFrame)
 			or (PetJournalListScrollFrame)
 
@@ -755,7 +795,7 @@ end
 	
 	if  ( numPets < 1 ) then return end  --If there are no Pets then nothing needs to be done.
 
-	local numDisplayedPets =(Rematch and RematchPetListScrollFrame:IsVisible() and  #roster.petList)
+	local numDisplayedPets =(Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and  #roster.petList)
 		or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting:GetNumPets())
 		or C_PetJournal.GetNumPets()
 
@@ -766,112 +806,106 @@ end
 		local pet_icon_frame = (Rematch and _G[button_name].Pet) or _G[button_name].dragButton
 		if ( displayIndex <= numDisplayedPets ) then
 
-			local index = (Rematch and RematchPetListScrollFrame:IsVisible() and displayIndex)
+			local index = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and displayIndex)
 			or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting:GetPetByIndex(displayIndex)["index"])
 			or displayIndex
 
 			local speciesID, level, petName, tradeable
-			local petID = (Rematch and RematchPetListScrollFrame:IsVisible() and roster.petList[index]) or nil
-			local idType = (Rematch and RematchPetListScrollFrame:IsVisible() and Rematch:GetIDType(petID)) or nil
+			local petID = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and roster.petList[index]) or nil
+			local idType = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and Rematch:GetIDType(petID)) or nil
 
 			--Get data from proper indexes based on addon loaded and visable
-			if Rematch and RematchPetListScrollFrame:IsVisible() and idType=="pet" then -- this is an owned pet
+			if Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and idType=="pet" then -- this is an owned pet
 				speciesID, _, level, _, _, _, _, petName, _, petType, _, _, _, _, _, tradeable = C_PetJournal.GetPetInfoByPetID(petID)
 
-			elseif Rematch and RematchPetListScrollFrame:IsVisible() and idType=="species" then -- speciesID for unowned pets
+			elseif Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and idType=="species" then -- speciesID for unowned pets
 				speciesID = petID
 				petName, _, _, _, _, _, _, _, tradeable = C_PetJournal.GetPetInfoBySpeciesID(petID)
 			else
 				petID,speciesID,_,_,level,_,_,petName,_,_,_,_,_,_,_,tradeable =  C_PetJournal.GetPetInfoByIndex(index)
 			end
 
-			if  button.BP_Cage then
+			if  button.BP_InfoFrame then
 			else
 				pet_icon_frame:SetScript("OnEnter", function (...) BPCM:BuildIconToolTip(pet_icon_frame); end)
-				pet_icon_frame:SetScript("OnLeave", function() GameTooltip:Hide(); end)
+					pet_icon_frame:SetScript("OnLeave", function() GameTooltip:Hide(); end)
 
-				button.BP_Cage = BPCM:init_button(button, i.."C")
-				button.BP_Value = BPCM:init_button(button, i.."V")
-				button.BP_Value:SetNormalTexture("Interface/ICONS/INV_Misc_Coin_19")
-				button.BP_Global= BPCM:init_button(button, i.."G")
-				button.BP_Global:SetNormalTexture("Interface/ICONS/INV_Misc_Note_04")
+				--button.BP_Cage = BPCM:init_button(button, i.."C")
+				--button.BP_Value = BPCM:init_button(button, i.."V")
+				--button.BP_Value:SetTexture("Interface/ICONS/INV_Misc_Coin_19")
+				--button.BP_Global= BPCM:init_button(button, i.."G")
+				--button.BP_Global:SetTexture("Interface/ICONS/INV_Misc_Note_04")
+
+				local frame = CreateFrame("Frame", "CageMatch"..i, button, "BPCM_ICON_TEMPLATE")
+				frame:ClearAllPoints()
+				frame:SetPoint("BOTTOMRIGHT", 0,0);
+				frame.no_trade:ClearAllPoints()
+				frame.no_trade:SetPoint("BOTTOMRIGHT", 0,0);
+				button.BP_InfoFrame  = frame
 			end
+
+			button.BP_InfoFrame.speciesID = speciesID
+			button.BP_InfoFrame.petlink = "p:"..speciesID..":1:2"
+
 
 			if tradeable then
 			--Set Cage icon info
-				button.BP_Cage:Hide()
-				button.petlink = "p:"..speciesID..":1:2"
-				button.speciesID = speciesID
-				if BPCM.bagResults [speciesID] then
-					button.BP_Cage:SetNormalTexture("Interface/ICONS/INV_Pet_PetTrap01")
-					button.BP_Cage.cage = true;
-					button.BP_Cage.speciesID = speciesID
-					button.BP_Cage:Show()
-				end
+				SetCageIcon(button.BP_InfoFrame.icons, speciesID)
+				button.BP_InfoFrame.icons:Show()		
+				button.BP_InfoFrame.no_trade:Hide()
+
 
 				--Set Value icon info
-				if BPCM.TSM_LOADED and Profile.TSM_Value then
-					button.BP_Value.petlink = "p:"..speciesID..":1:2"
-					local pass, rank = BPCM:pricelookup(button.BP_Value.petlink)
-
-					if Profile.TSM_Filter and not pass then
-						button.BP_Value:Hide()
-						button.BP_Value.display = false
-					else
-						if Profile.TSM_Rank and rank == 2 then
-							button.BP_Value:SetNormalTexture("Interface/ICONS/INV_Misc_Coin_18")
-							elseif Profile.TSM_Rank and  rank == 3 then
-							button.BP_Value:SetNormalTexture("Interface/ICONS/INV_Misc_Coin_17")
-						else
-							button.BP_Value:SetNormalTexture("Interface/ICONS/INV_Misc_Coin_19")
-						end
-						button.BP_Value.display = true
-						button.BP_Value:Show()
-					end
-				else
-					button.BP_Value:Hide()
-					button.BP_Value.display = false
-				end
+				SetTSMValue(button.BP_InfoFrame.icons, speciesID)
 
 				--Set Global icon info
 				if BPCM:SearchList(speciesID,true) then
-					button.BP_Global:Show()
-					button.BP_Global.speciesID = speciesID
-					button.BP_Global.display = true
+					button.BP_InfoFrame.icons.BP_Global:Show()
+					button.BP_InfoFrame.icons.BP_Global.speciesID = speciesID
+					button.BP_InfoFrame.icons.BP_Global.display = true
 				else
-					button.BP_Global:Hide()
-					button.BP_Global.display = false
+					button.BP_InfoFrame.icons.BP_Global:Hide()
+					button.BP_InfoFrame.icons.BP_Global.display = false
 				end
 
 			else
-				if not Profile.No_Trade then
-					button.BP_Cage:SetNormalTexture("Interface/Buttons/UI-GROUPLOOT-PASS-DOWN")
-					button.BP_Cage:Show()
+				if Profile.No_Trade then
+					--button.BP_InfoFrame.icons.BP_Cage:SetTexture("Interface/Buttons/UI-GROUPLOOT-PASS-DOWN")
+					--button.BP_InfoFrame.icons.BP_Cage:Show()
+					button.BP_InfoFrame.no_trade:Show()
 				else
-					button.BP_Cage:Hide()
+					--button.BP_InfoFrame.icons.BP_Cage:Hide()
+					button.BP_InfoFrame.no_trade:Hide()
 				end
 
-				button.BP_Cage.cage = false
-				button.BP_Cage.tooltip = nil
-				button.BP_Value.tooltip = nil
-				button.BP_Value.display = false
-				button.BP_Value:Hide()
-				button.BP_Value.petlink = nil
-				button.BP_Global.speciesID = nil
-				button.BP_Global:Hide()
-				button.BP_Global.display = false
-				button.petlink = nil
-				button.speciesID = nil
+				
+				button.BP_InfoFrame.icons:Hide()
+
+--[[
+				button.BP_InfoFrame.icons.BP_Cage.cage = false
+				button.BP_InfoFrame.icons.BP_Cage.tooltip = nil
+				button.BP_InfoFrame.icons.BP_Value.tooltip = nil
+				button.BP_InfoFrame.icons.BP_Value.display = false
+				button.BP_InfoFrame.icons.BP_Value:Hide()
+				button.BP_InfoFrame.icons.BP_Value.petlink = nil
+				button.BP_InfoFrame.icons.BP_Global.speciesID = nil
+				button.BP_InfoFrame.icons.BP_Global:Hide()
+				button.BP_InfoFrame.icons.BP_Global.display = false
+				button.BP_InfoFrame.petlink = nil
+				button.BP_InfoFrame.speciesID = nil
+				]]--
 			end
-			BPCM:PositionIcons(button)
+			BPCM:PositionIcons(button.BP_InfoFrame.icons)
 			--button.BPCM:Show()
 
 		else
-			button.BP_Cage:Hide()
-			button.BP_Value:Hide()
-			button.BP_Global:Hide()
-			button.BP_Value.display = false
-			button.BP_Global.display = false
+			button.BP_InfoFrame.icons.BP_Cage:Hide()
+			button.BP_InfoFrame.icons.BP_Value:Hide()
+			button.BP_InfoFrame.icons.BP_Global:Hide()
+			button.BP_InfoFrame.icons.BP_Value.display = false
+			button.BP_InfoFrame.icons.BP_Global.display = false
+						button.BP_InfoFrame:Hide()
+
 		end
 	end
 end
@@ -954,10 +988,10 @@ function BPCM:OnInitialize()
 end
 
 local function TSMVersionCheck()
-	if TSMAPI_FOUR then 
+	if TSM_API then 
 		TSM_Version = 4
 	else
-		TSM_Version= 3
+		TSM_Version = 3
 	end
 end
 
@@ -990,7 +1024,9 @@ function BPCM:OnEnable()
 
 	--Rematch hooks
 	if IsAddOnLoaded("Rematch") then
-		hooksecurefunc(RematchPetPanel,"UpdateList", function(...)BPCM:UpdatePetList_Icons(); end)
+		hooksecurefunc(Rematch,"FillCommonPetListButton", function(...)BPCM:UpdateRematch(...); end)
+
+		--Rematch.Roster
 	end
 
 	BPCM.TSM_LOADED =  IsAddOnLoaded("TradeSkillMaster") --and IsAddOnLoaded("TradeSkillMaster_AuctionDB")
@@ -1006,6 +1042,125 @@ BINDING_NAME_BPCM_MOUSEOVER_CAGE = L.BPCM_MOUSEOVER_CAGE
 _G["BINDING_NAME_CLICK BPCM_LearnButton:LeftButton"] = L.KEYBIND_LEARN
 
 
+local recount_index = 1
+function BPCM:UpdateRematch(button, petID)
+
+--if not PetJournal:IsVisible() or RematchPetPanel.List.ScrollFrame:IsVisible() then return end
+
+	local scrollFrame = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and RematchPetPanel.List.ScrollFrame)
+			or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and PetJournalEnhancedListScrollFrame)
+			or (PetJournalListScrollFrame)
+
+	local roster = Rematch and Rematch.Roster
+	local button_name = button:GetName()
+
+	local offset = HybridScrollFrame_GetOffset(scrollFrame)
+	local buttons = scrollFrame.buttons
+	local numPets = C_PetJournal.GetNumPets()
+	local showPets = true
+	
+		local pet_icon_frame =  button.Pet
+		
+
+			--local index = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and displayIndex)
+			--or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting:GetPetByIndex(displayIndex)["index"])
+			--or displayIndex
+
+			local speciesID, level, petName, tradeable
+			--local petID = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and roster.petList[index]) or nil
+			local idType = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and Rematch:GetIDType(petID)) or nil
+
+			--Get data from proper indexes based on addon loaded and visable
+			if Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and idType=="pet" then -- this is an owned pet
+				speciesID, _, level, _, _, _, _, petName, _, petType, _, _, _, _, _, tradeable = C_PetJournal.GetPetInfoByPetID(petID)
+
+			elseif Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and idType=="species" then -- speciesID for unowned pets
+				speciesID = petID
+				petName, _, _, _, _, _, _, _, tradeable = C_PetJournal.GetPetInfoBySpeciesID(petID)
+			else
+				--petID,speciesID,_,_,level,_,_,petName,_,_,_,_,_,_,_,tradeable =  C_PetJournal.GetPetInfoByIndex(index)
+			end
+
+			if  button.BP_InfoFrame then
+			else
+				--pet_icon_frame:SetScript("OnEnter", function (...) BPCM:BuildIconToolTip(pet_icon_frame); end)
+				--pet_icon_frame:SetScript("OnLeave", function() GameTooltip:Hide(); end)
+
+				--button.BP_Cage = BPCM:init_button(button, i.."C")
+				--button.BP_Value = BPCM:init_button(button, i.."V")
+				--button.BP_Value:SetTexture("Interface/ICONS/INV_Misc_Coin_19")
+				--button.BP_Global= BPCM:init_button(button, i.."G")
+				--button.BP_Global:SetTexture("Interface/ICONS/INV_Misc_Note_04")
+
+				local frame = CreateFrame("Frame", "CageMatch_RC"..recount_index, button, "BPCM_ICON_TEMPLATE")
+				frame:ClearAllPoints()
+				frame:SetPoint("BOTTOMRIGHT", 0,0);
+				frame.no_trade:ClearAllPoints()
+				frame.no_trade:SetPoint("BOTTOMRIGHT", 0,0);
+				button.BP_InfoFrame  = frame
+			end
+
+			button.BP_InfoFrame.speciesID = speciesID
+			button.BP_InfoFrame.petlink = "p:"..speciesID..":1:2"
+
+
+			if tradeable then
+			--Set Cage icon info
+				SetCageIcon(button.BP_InfoFrame.icons, speciesID)
+				button.BP_InfoFrame.icons:Show()		
+				button.BP_InfoFrame.no_trade:Hide()
+
+
+				--Set Value icon info
+				SetTSMValue(button.BP_InfoFrame.icons, speciesID)
+
+				--Set Global icon info
+				if BPCM:SearchList(speciesID,true) then
+					button.BP_InfoFrame.icons.BP_Global:Show()
+					button.BP_InfoFrame.icons.BP_Global.speciesID = speciesID
+					button.BP_InfoFrame.icons.BP_Global.display = true
+				else
+					button.BP_InfoFrame.icons.BP_Global:Hide()
+					button.BP_InfoFrame.icons.BP_Global.display = false
+				end
+
+			else
+				if Profile.No_Trade then
+					--button.BP_InfoFrame.icons.BP_Cage:SetTexture("Interface/Buttons/UI-GROUPLOOT-PASS-DOWN")
+					--button.BP_InfoFrame.icons.BP_Cage:Show()
+					button.BP_InfoFrame.no_trade:Show()
+				else
+					--button.BP_InfoFrame.icons.BP_Cage:Hide()
+					button.BP_InfoFrame.no_trade:Hide()
+				end
+
+				
+				button.BP_InfoFrame.icons:Hide()
+
+--[[
+				button.BP_InfoFrame.icons.BP_Cage.cage = false
+				button.BP_InfoFrame.icons.BP_Cage.tooltip = nil
+				button.BP_InfoFrame.icons.BP_Value.tooltip = nil
+				button.BP_InfoFrame.icons.BP_Value.display = false
+				button.BP_InfoFrame.icons.BP_Value:Hide()
+				button.BP_InfoFrame.icons.BP_Value.petlink = nil
+				button.BP_InfoFrame.icons.BP_Global.speciesID = nil
+				button.BP_InfoFrame.icons.BP_Global:Hide()
+				button.BP_InfoFrame.icons.BP_Global.display = false
+				button.BP_InfoFrame.petlink = nil
+				button.BP_InfoFrame.speciesID = nil
+				]]--
+			end
+			BPCM:PositionIcons(button.BP_InfoFrame.icons)
+			--button.BPCM:Show()
+
+
+	
+	
+
+
+end
+
 --Support for TSM3 and updated API for TSM4
 
 
@@ -1014,7 +1169,7 @@ function BPCM.TSM:GetCustomPriceValue(source, itemID)
 	if TSM_Version == 3 then 
 		return TSMAPI:GetCustomPriceValue(source, itemID)
 	else
-		return TSMAPI_FOUR.CustomPrice.GetValue(source, itemID)
+		return TSM_API.GetCustomPriceValue(source, itemID)
 	end
 end
 
@@ -1023,7 +1178,7 @@ function BPCM.TSM:MoneyToString(priceMarket)
 	if TSM_Version == 3 then 
 		return TSMAPI:MoneyToString(priceMarket)
 	else
-		return TSMAPI_FOUR.Money.ToString(priceMarket)
+		return TSM_API.FormatMoneyString(priceMarket)
 	end
 end
 
@@ -1042,18 +1197,17 @@ function BPCM.TSM:ValidateCustomPrice(price)
 	if TSM_Version == 3 then 
 		return TSMAPI:ValidateCustomPrice(price)
 	else
-		return TSMAPI_FOUR.CustomPrice.Validate(price)
+		return TSM_API.IsCustomPriceValid(price)
 	end
 end
 
+BPCM.PriceSources = {}
 function BPCM.TSM:GetPriceSources()
 	if TSM_Version == 3 then 
 		return TSMAPI:GetPriceSources()
 	else
 		local table = {}
-		for source in TSMAPI_FOUR.CustomPrice.Iterator() do
-			table[source] = source
-		end
-		return table
+		 TSM_API.GetPriceSourceKeys(BPCM.PriceSources) 
+		return BPCM.PriceSources
 	end
 end
