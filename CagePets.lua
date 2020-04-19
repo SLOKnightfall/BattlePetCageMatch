@@ -195,7 +195,7 @@ function Cage:CreateButton(parent)
 		if Shift then
 			LibStub("AceConfigDialog-3.0"):Open("BattlePetCageMatch")
 		else
-			Cage:ResetListCheck()
+			Cage:Controll()
 		end
 	end);
 	cageButton:SetScript("OnEnter",
@@ -226,7 +226,7 @@ function Cage:OnEnable()
 		BPCM.RecountcageButton = Cage:CreateButton("Recount")
 		BPCM.RecountcageButton:SetParent("RematchToolbar")
 		BPCM.RecountcageButton:ClearAllPoints()
-		BPCM.RecountcageButton:SetPoint("RIGHT", RematchHealButton, "LEFT", -10, 0);
+		BPCM.RecountcageButton:SetPoint("LEFT", RematchToolbar.PetCount, "RIGHT", 25, 0)
 		BPCM.RecountcageButton:SetWidth(32)
 		BPCM.RecountcageButton:SetHeight(32)
 		BPCM.RecountcageButton:Show()
@@ -272,15 +272,46 @@ StaticPopupDialogs["BPCM_STOP_CAGEING"] = {
   preferredIndex = 3,  -- avoid some UI taint, see http://www.wowace.com/announcements/how-to-avoid-some-ui-taint/
 }
 
+--Dialog Box for user decided handeling of an existing cage list
+StaticPopupDialogs["BPCM_START_CAGEING"] = {
+  text = L.START_CAGEING_DIALOG_TEXT,
+  button1 = L.CONTINUE_CAGEING_DIALOG_YES,
+  button2 = L.CONTINUE_CAGEING_DIALOG_NO,
+  OnAccept = function ()
+	Cage:ResetListCheck()
+  end,
 
---Determines how an existing cage list should be handled
-function Cage:ResetListCheck()
+   OnCancel = function (_,reason)
+  end,
+  enterClicksFirstButton  = true,
+  timeout = 0,
+  whileDead = true,
+  hideOnEscape = true,
+  preferredIndex = 3,  -- avoid some UI taint, see http://www.wowace.com/announcements/how-to-avoid-some-ui-taint/
+}
+
+
+function Cage:Controll()
 	--Allows stoping of an auto cage process
 	if BPCM.eventFrame.pendingUpdate == true then
 		BPCM.eventFrame.pendingUpdate = false
 		StaticPopup_Show("BPCM_STOP_CAGEING")
 		return
 	end
+
+	if Profile.Cage_Confirm then
+		StaticPopup_Show("BPCM_START_CAGEING")
+		
+	else
+		Cage:ResetListCheck()
+	end
+
+end
+
+
+--Determines how an existing cage list should be handled
+function Cage:ResetListCheck()
+
 
 
 	if #petsToCage > 0  and Profile.Incomplete_List == "prompt" then

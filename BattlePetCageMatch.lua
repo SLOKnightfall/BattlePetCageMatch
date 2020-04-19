@@ -118,6 +118,15 @@ local options = {
 					type = "header",
 					width = "full",
 				},
+					Cage_Confirm = {
+					order = 4.9,
+					name = L.OPTIONS_CAGE_CONFIRM,
+					desc = nil,
+					type = "toggle",
+					set = function(info,val) Profile.Cage_Confirm = val end,
+					get = function(info) return Profile.Cage_Confirm end,
+					width = "full"
+				},
 				Cage_Output = {
 					order = 5,
 					name = L.OPTIONS_CAGE_OUTPUT,
@@ -480,6 +489,7 @@ local defaults = {
 		Pet_Whitelist = {},
 		Handle_PetBlackList = true,
 		Pet_Blacklist = {},
+		Cage_Confirm = false,
 	}
 }
 
@@ -914,17 +924,18 @@ end
 function BPCM:UpdateButtons()
 	if BPCM.REMATCH_LOADED  and RematchToolbar:IsVisible() then
 		BPCM.cageButton:SetParent("RematchToolbar")
-		BPCM.cageButton:SetPoint("RIGHT", RematchHealButton, "LEFT", 0, -90);
+		BPCM.cageButton:SetPointSetPoint("LEFT", RematchToolbar.PetCount, "RIGHT", 25, 0)
 		BPCM.cageButton:SetWidth(20)
 		BPCM.cageButton:SetHeight(20)
 	else
 		BPCM.cageButton:SetParent("PetJournal")
-		BPCM.cageButton:SetPoint("RIGHT", PetJournalFindBattle, "LEFT", 0, 0);
+		BPCM.cageButton:SetPoint("RIGHT", PetJournalFindBattle, "LEFT", 0, 0)
 
 		BPCM.cageButton:SetWidth(20)
 		BPCM.cageButton:SetHeight(20)
 	end
 end
+
 
 function BPCM:BattlePetTooltip_Show(self, speciesID)
 	local ownedText = self.Owned:GetText() or "" -- C_PetJournal.GetOwnedBattlePetString(species)
