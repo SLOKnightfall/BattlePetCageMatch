@@ -15,14 +15,14 @@ local skil_list = {}
 local function TSMPricelookup(pBattlePetID)
 	if (not BPCM.TSM_LOADED) or (not Profile.Cage_Max_Price) then return true end
 
-	local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or Profile.TSM_Market or "DBMarket"
+	local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or BPCM.PriceSources[Profile.TSM_Market] or "DBMarket"
 	return (BPCM.TSM:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= (Profile.Cage_Max_Price_Value *100*100)
 end
 
 local function TSMCustomPricelookup(pBattlePetID)
 	if (not BPCM.TSM_LOADED) or (not Profile.Cage_Custom_TSM_Price) then return true end
-
-	local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or Profile.TSM_Market or "DBMarket"
+print(Profile.TSM_Market)
+	local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or BPCM.PriceSources[Profile.TSM_Market] or "DBMarket"
 	local custom_value = (BPCM.TSM:GetCustomPriceValue(Profile.Cage_Custom_TSM_Price_Value, "p:"..pBattlePetID..":1:2") or 0)
 	return (BPCM.TSM:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= custom_value
 end

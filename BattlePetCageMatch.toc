@@ -1,4 +1,4 @@
-﻿## Interface: 803000
+﻿## Interface: 80300
 ## Title: BattlePetCageMatch (@project-version@)
 ## Version: @project-version@
 ## Game Version: 8
