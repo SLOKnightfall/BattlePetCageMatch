@@ -19,9 +19,9 @@ local function TSMPricelookup(pBattlePetID)
 	return (BPCM.TSM:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= (Profile.Cage_Max_Price_Value *100*100)
 end
 
+
 local function TSMCustomPricelookup(pBattlePetID)
 	if (not BPCM.TSM_LOADED) or (not Profile.Cage_Custom_TSM_Price) then return true end
-print(Profile.TSM_Market)
 	local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or BPCM.PriceSources[Profile.TSM_Market] or "DBMarket"
 	local custom_value = (BPCM.TSM:GetCustomPriceValue(Profile.Cage_Custom_TSM_Price_Value, "p:"..pBattlePetID..":1:2") or 0)
 	return (BPCM.TSM:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= custom_value
@@ -64,12 +64,12 @@ function Cage:GeneratePetList()
 			and ((Profile.Skip_Caged and not BPCM.bagResults[pBattlePetID]) or (not Profile.Skip_Caged and true))
 			and ((Profile.Handle_PetBlackList and not BPCM.BlackListDB:FindIndex(pName)) or (not Profile.Handle_PetBlackList and true))
 			--and ((Profile.Handle_PetWhiteList == "only" and BPCM.WhiteListDB:FindIndex(pName)) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
-
 			and ((Profile.Handle_PetWhiteList == "only" and false) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
 			and ((Profile.Cage_Once and not petCache[pBattlePetID] ) or (not Profile.Cage_Once  and true))
 			and TSMPricelookup(pBattlePetID) 
 			and TSMCustomPricelookup(pBattlePetID)
 			and TSMAuctionLookup(pBattlePetID) then
+
 				if (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level)) then  --Breaks if included in previous if statement
 					Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE)
 					table.insert(petsToCage, pGuid)
@@ -114,6 +114,7 @@ function Cage:StartCageing(index)
 	return true
 end
 
+
 --Verifies that there is free bag space
 function Cage:inventorySpaceCheck()
 	local free=0
@@ -129,6 +130,7 @@ function Cage:inventorySpaceCheck()
 		return true
 	end
 end
+
 
 --The auto cageing has to be haneled by an event.  Trying to use an loop overwhelms the game and only a few pets are caged.
 --The frame watches for any time a pet is caged and then tries to cage a new pet after a short delay, which then triggers 
@@ -178,12 +180,11 @@ eventFrame:SetAttribute("type1", "macro") -- left click causes macro
 --eventFrame:SetAttribute("macrotext1","/run BPCM.Create_Learn_Queue();\n/run BPCM.Learn_Click = true;") -- text for macro on left click
 eventFrame:SetAttribute("macrotext1","/use pet cage;\n/run BPCM.Learn_Click = true;") -- text for macro on left click
 
+
 --Virtual Button to attach the Learn Keybinding to
 --local learnbutton = CreateFrame("Button", "BPCM_LearnButton", UIParent, "SecureActionButtonTemplate")
 --learnbutton:SetAttribute("type1", "macro") -- left click causes macro		
 --learnbutton:SetAttribute("macrotext1","/run BPCM.Create_Learn_Queue()") -- text for macro on left click
-
-
 function Cage:CreateButton(parent)
 	local cageButton = CreateFrame("Button", "BPCM_CageButton_"..parent, PetJournal);
 	cageButton:SetNormalTexture("Interface/ICONS/INV_Pet_PetTrap01")
@@ -219,11 +220,9 @@ end
 
 function Cage:OnEnable()
 	Profile = BPCM.Profile
-
 	-- Add caging buttons to Pet Journal & Rematch
 	BPCM.cageButton = Cage:CreateButton("PetJournal")
 	
-
 	if IsAddOnLoaded("Rematch") then
 		BPCM.RematchCageButton = Cage:CreateButton("Rematch")
 		BPCM.RematchCageButton:SetParent("RematchToolbar")
@@ -238,58 +237,53 @@ end
 
 --Dialog Box for user decided handeling of an existing cage list
 StaticPopupDialogs["BPCM_CONTINUE_CAGEING"] = {
-  text = L.CONTINUE_CAGEING_DIALOG_TEXT,
-  button1 = L.CONTINUE_CAGEING_DIALOG_YES,
-  button2 = L.CONTINUE_CAGEING_DIALOG_NO,
-  OnAccept = function ()
-	Cage:StartCageing(BPCM.eventFrame.petIndex)
-  end,
-
-   OnCancel = function (_,reason)
-          Cage:GeneratePetList()
-  end,
-  enterClicksFirstButton  = true,
-  timeout = 0,
-  whileDead = true,
-  hideOnEscape = true,
-  preferredIndex = 3,  -- avoid some UI taint, see http://www.wowace.com/announcements/how-to-avoid-some-ui-taint/
+	text = L.CONTINUE_CAGEING_DIALOG_TEXT,
+	button1 = L.CONTINUE_CAGEING_DIALOG_YES,
+	button2 = L.CONTINUE_CAGEING_DIALOG_NO,
+	OnAccept = function ()
+		Cage:StartCageing(BPCM.eventFrame.petIndex)
+	end,
+	OnCancel = function (_,reason)
+		Cage:GeneratePetList()
+	end,
+	enterClicksFirstButton= true,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+	preferredIndex = 3,  -- avoid some UI taint, see http://www.wowace.com/announcements/how-to-avoid-some-ui-taint/
 }
+
 
 --Dialog Box for user decided handeling of an existing cage list
 StaticPopupDialogs["BPCM_STOP_CAGEING"] = {
-  text = L.STOP_CAGEING_DIALOG_TEXT,
-  button1 = L.CONTINUE_CAGEING_DIALOG_YES,
-  button2 = L.CONTINUE_CAGEING_DIALOG_NO,
-  OnAccept = function ()
-	
-  end,
-
-   OnCancel = function (_,reason)
-          Cage:StartCageing(BPCM.eventFrame.petIndex)
-  end,
-  enterClicksFirstButton  = true,
-  timeout = 0,
-  whileDead = true,
-  hideOnEscape = true,
-  preferredIndex = 3,  -- avoid some UI taint, see http://www.wowace.com/announcements/how-to-avoid-some-ui-taint/
+	text = L.STOP_CAGEING_DIALOG_TEXT,
+	button1 = L.CONTINUE_CAGEING_DIALOG_YES,
+	button2 = L.CONTINUE_CAGEING_DIALOG_NO,
+	OnAccept = function () end,
+	OnCancel = function (_,reason)
+	Cage:StartCageing(BPCM.eventFrame.petIndex)
+	end,
+	enterClicksFirstButton = true,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+	preferredIndex = 3,  -- avoid some UI taint, see http://www.wowace.com/announcements/how-to-avoid-some-ui-taint/
 }
 
 --Dialog Box for user decided handeling of an existing cage list
 StaticPopupDialogs["BPCM_START_CAGEING"] = {
-  text = L.START_CAGEING_DIALOG_TEXT,
-  button1 = L.CONTINUE_CAGEING_DIALOG_YES,
-  button2 = L.CONTINUE_CAGEING_DIALOG_NO,
-  OnAccept = function ()
-	Cage:ResetListCheck()
-  end,
-
-   OnCancel = function (_,reason)
-  end,
-  enterClicksFirstButton  = true,
-  timeout = 0,
-  whileDead = true,
-  hideOnEscape = true,
-  preferredIndex = 3,  -- avoid some UI taint, see http://www.wowace.com/announcements/how-to-avoid-some-ui-taint/
+	text = L.START_CAGEING_DIALOG_TEXT,
+	button1 = L.CONTINUE_CAGEING_DIALOG_YES,
+	button2 = L.CONTINUE_CAGEING_DIALOG_NO,
+	OnAccept = function ()
+		Cage:ResetListCheck()
+	end,
+	OnCancel = function (_,reason)	end,
+	enterClicksFirstButton= true,
+	timeout = 0,
+	whileDead = true,
+	hideOnEscape = true,
+	preferredIndex = 3,  -- avoid some UI taint, see http://www.wowace.com/announcements/how-to-avoid-some-ui-taint/
 }
 
 
@@ -303,19 +297,14 @@ function Cage:Controll()
 
 	if Profile.Cage_Confirm then
 		StaticPopup_Show("BPCM_START_CAGEING")
-		
 	else
 		Cage:ResetListCheck()
 	end
-
 end
 
 
 --Determines how an existing cage list should be handled
 function Cage:ResetListCheck()
-
-
-
 	if #petsToCage > 0  and Profile.Incomplete_List == "prompt" then
 		StaticPopup_Show("BPCM_CONTINUE_CAGEING")
 	elseif #petsToCage > 0  and Profile.Incomplete_List == "old" then
@@ -337,7 +326,6 @@ function Cage:Update_Learn_Queue_Macro()
 		--BPCM_LearnButton:SetAttribute("macrotext1","/run BPCM.Create_Learn_Queue();\n/run BPCM.Learn_Click = true;")
 		learnindex = nil
 		learn_queue = {}
-		--print(L.LEARN_COMPLETE)
 	end
 end
 
@@ -362,11 +350,9 @@ function BPCM.Create_Learn_Queue()
 					end
 				end
 			end
-		end	
-		
+		end		
 	end
 
-		learnindex = 1
-
+	learnindex = 1
 	Cage:Update_Learn_Queue_Macro()
 end
