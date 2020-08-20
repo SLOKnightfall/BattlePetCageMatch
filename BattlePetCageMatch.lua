@@ -1164,16 +1164,9 @@ function BPCM:UpdateRematch(button, petID)
 			end
 			BPCM:PositionIcons(button.BP_InfoFrame.icons)
 			--button.BPCM:Show()
-
-
-	
-	
-
-
 end
 
 --Support for TSM3 and updated API for TSM4
-
 
 function BPCM.TSM:GetCustomPriceValue(source, itemID)
 
@@ -1198,10 +1191,11 @@ function BPCM.TSM:GetAuctionQuantity(pBattlePetID)
 
 	if TSM_Version == 3 then 
 		return TSMAPI.Inventory:GetAuctionQuantity(pBattlePetID)
+	elseif TSM_Version < 4.10 then 
+		return TSMAPI_FOUR.Inventory.GetAuctionQuantity(pBattlePetID)
 	else
-		return  TSMAPI_FOUR.Inventory.GetAuctionQuantity(pBattlePetID)
+		return  TSM_API.GetAuctionQuantity(itemString)
 	end
-
 end
 
 function BPCM.TSM:ValidateCustomPrice(price)
@@ -1218,7 +1212,7 @@ function BPCM.TSM:GetPriceSources()
 		return TSMAPI:GetPriceSources()
 	else
 		local table = {}
-		 TSM_API.GetPriceSourceKeys(BPCM.PriceSources) 
+		 TSM_API.GetPriceSourceKeys(BPCM.PriceSources)
 		return BPCM.PriceSources
 	end
 end
