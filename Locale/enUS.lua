@@ -7,7 +7,8 @@ if not L then return end
 --@localization(locale="enUS", format="lua_additive_table", handle-unlocalized="comment")@
  local commandColor = "FFFFC654";
 
-
+L.OPTIONS_SHOW_BUTTON = "Show Cage Button on Pet Journal"
+L.OPTIONS_SHOW_BUTTON_TOOLTIP = ""
 L.OPTIONS_HEADER = "Options"
 L.OPTIONS_TRADEABLE = "Show Non-tradeable icon"
 L.OPTIONS_TRADEABLE_TOOLTIP = "Toggles a marker for pets tha can not be caged"

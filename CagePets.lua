@@ -190,6 +190,7 @@ function Cage:CreateButton(parent)
 	cageButton:SetPoint("RIGHT", PetJournalFindBattle, "LEFT", 0, 0);
 	cageButton:SetWidth(20)
 	cageButton:SetHeight(20)
+	cageButton:SetShown(Profile.Show_Cage_Button)
 	cageButton:SetScript("OnClick", function(self, button, down) 
 		local Shift = IsShiftKeyDown()
 		if Shift then
@@ -221,15 +222,16 @@ function Cage:OnEnable()
 
 	-- Add caging buttons to Pet Journal & Rematch
 	BPCM.cageButton = Cage:CreateButton("PetJournal")
+	
 
 	if IsAddOnLoaded("Rematch") then
-		BPCM.RecountcageButton = Cage:CreateButton("Recount")
-		BPCM.RecountcageButton:SetParent("RematchToolbar")
-		BPCM.RecountcageButton:ClearAllPoints()
-		BPCM.RecountcageButton:SetPoint("LEFT", RematchToolbar.PetCount, "RIGHT", 25, 0)
-		BPCM.RecountcageButton:SetWidth(32)
-		BPCM.RecountcageButton:SetHeight(32)
-		BPCM.RecountcageButton:Show()
+		BPCM.RematchCageButton = Cage:CreateButton("Rematch")
+		BPCM.RematchCageButton:SetParent("RematchToolbar")
+		BPCM.RematchCageButton:ClearAllPoints()
+		BPCM.RematchCageButton:SetPoint("LEFT", RematchToolbar.PetCount, "RIGHT", 5, 0)
+		BPCM.RematchCageButton:SetWidth(32)
+		BPCM.RematchCageButton:SetHeight(32)
+		BPCM.RematchCageButton:SetShown(Profile.Show_Cage_Button and not RematchSettings.Minimized)
 	end
 end
 

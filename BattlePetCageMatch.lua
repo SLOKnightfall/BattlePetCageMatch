@@ -74,6 +74,18 @@ local options = {
 					type = "header",
 					width = "full",
 				},
+				Show_Cage_Button = {
+					order = .9,
+					name = L.OPTIONS_SHOW_BUTTON ,
+					desc = L.OPTIONS_SHOW_BUTTON_TOOLTIP,
+					type = "toggle",
+					set = function(info,val) 
+						Profile.Show_Cage_Button = val
+						if IsAddOnLoaded("Rematch") then BPCM.RematchCageButton:SetShown(Profile.Show_Cage_Button and not RematchSettings.Minimized) end
+						BPCM.cageButton:SetShown(Profile.Show_Cage_Button) end,
+					get = function(info) return Profile.Show_Cage_Button end,
+					width = "full",
+				},
 				Tradeable = {
 					order = 1,
 					name = L.OPTIONS_TRADEABLE ,
@@ -459,6 +471,7 @@ local options = {
 --ACE Profile Saved Variables Defaults
 local defaults = {
 	profile ={
+		Show_Cage_Button = true,
 		No_Trade = true,
 		TSM_Value = true,
 		Other_Server = true,
@@ -703,7 +716,6 @@ function BPCM:TSM_CustomSource(price)
 	local isValid, err = BPCM.TSM:ValidateCustomPrice(price)
 	if not isValid then
 		--print(string.format(L.TSM_CUSTOM_ERROR, BPCM.TSM:GetInlineColor("link") .. price .. "|r", err))
-		print(err)
 	else
 		return price
 	end
@@ -713,7 +725,7 @@ end
 function BPCM:PositionIcons(button)
 	local Anchor = "BOTTOMRIGHT"
 	local offset = 0
-	if BPCM.PJE_LOADED and BPCM.REMATCH_LOADED and RematchPetPanel.List.ScrollFrame:IsVisible() then
+	if BPCM.PJE_LOADED and BPCM.REMATCH_LOADED and RematchPetPanel:IsVisible() then
 		Anchor = "TOPRIGHT"
 		offset = -5
 	else 	
@@ -790,9 +802,9 @@ local function SetTSMValue(button, speciesID)
 local UpdateButton
 ---Updates the icons on Pet Journal to tag caged pets
  function BPCM:UpdatePetList_Icons()
- 	if not PetJournal:IsVisible() or (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible()) then return end
+ 	if not PetJournal:IsVisible() or (Rematch and RematchPetPanel:IsVisible()) then return end
 
-	local scrollFrame = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and RematchPetPanel.List.ScrollFrame)
+	local scrollFrame = (Rematch and RematchPetPanel:IsVisible() and RematchPetPanel)
 			or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and PetJournalEnhancedListScrollFrame)
 			or (PetJournalListScrollFrame)
 
@@ -805,7 +817,7 @@ local UpdateButton
 	
 	if  ( numPets < 1 ) then return end  --If there are no Pets then nothing needs to be done.
 
-	local numDisplayedPets =(Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and  #roster.petList)
+	local numDisplayedPets =(Rematch and RematchPetPanel:IsVisible() and  #roster.petList)
 		or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting:GetNumPets())
 		or C_PetJournal.GetNumPets()
 
@@ -816,19 +828,19 @@ local UpdateButton
 		local pet_icon_frame = (Rematch and _G[button_name].Pet) or _G[button_name].dragButton
 		if ( displayIndex <= numDisplayedPets ) then
 
-			local index = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and displayIndex)
+			local index = (Rematch and RematchPetPanel:IsVisible() and displayIndex)
 			or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting:GetPetByIndex(displayIndex)["index"])
 			or displayIndex
 
 			local speciesID, level, petName, tradeable
-			local petID = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and roster.petList[index]) or nil
-			local idType = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and Rematch:GetIDType(petID)) or nil
+			local petID = (Rematch and RematchPetPanel:IsVisible() and roster.petList[index]) or nil
+			local idType = (Rematch and RematchPetPanel:IsVisible() and Rematch:GetIDType(petID)) or nil
 
 			--Get data from proper indexes based on addon loaded and visable
-			if Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and idType=="pet" then -- this is an owned pet
+			if Rematch and RematchPetPanel:IsVisible() and idType=="pet" then -- this is an owned pet
 				speciesID, _, level, _, _, _, _, petName, _, petType, _, _, _, _, _, tradeable = C_PetJournal.GetPetInfoByPetID(petID)
 
-			elseif Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and idType=="species" then -- speciesID for unowned pets
+			elseif Rematch and RematchPetPanel:IsVisible() and idType=="species" then -- speciesID for unowned pets
 				speciesID = petID
 				petName, _, _, _, _, _, _, _, tradeable = C_PetJournal.GetPetInfoBySpeciesID(petID)
 			else
@@ -1036,6 +1048,8 @@ function BPCM:OnEnable()
 	--Rematch hooks
 	if IsAddOnLoaded("Rematch") then
 		hooksecurefunc(Rematch,"FillCommonPetListButton", function(...)BPCM:UpdateRematch(...); end)
+		hooksecurefunc(RematchFrame,"ToggleSize", function(...) BPCM.RematchCageButton:SetShown(Profile.Show_Cage_Button and not RematchSettings.Minimized)end)
+
 
 		--Rematch.Roster
 	end
@@ -1056,9 +1070,9 @@ _G["BINDING_NAME_CLICK BPCM_LearnButton:LeftButton"] = L.KEYBIND_LEARN
 local recount_index = 1
 function BPCM:UpdateRematch(button, petID)
 
---if not PetJournal:IsVisible() or RematchPetPanel.List.ScrollFrame:IsVisible() then return end
+--if not PetJournal:IsVisible() or RematchPetPanel:IsVisible() then return end
 
-	local scrollFrame = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and RematchPetPanel.List.ScrollFrame)
+	local scrollFrame = (Rematch and RematchPetPanel:IsVisible() and RematchPetPanel)
 			or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and PetJournalEnhancedListScrollFrame)
 			or (PetJournalListScrollFrame)
 
@@ -1073,22 +1087,22 @@ function BPCM:UpdateRematch(button, petID)
 		local pet_icon_frame =  button.Pet
 		
 
-			--local index = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and displayIndex)
+			--local index = (Rematch and RematchPetPanel:IsVisible() and displayIndex)
 			--or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting:GetPetByIndex(displayIndex)["index"])
 			--or displayIndex
 
 			local speciesID, level, petName, tradeable
-			--local petID = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and roster.petList[index]) or nil
-			local idType = (Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and Rematch:GetIDType(petID)) or nil
+			--local petID = (Rematch and RematchPetPanel:IsVisible() and roster.petList[index]) or nil
+			local idType = (Rematch and RematchPetPanel:IsVisible() and Rematch:GetIDType(petID)) or nil
 
 			--Get data from proper indexes based on addon loaded and visable
-			if Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and idType=="pet" then -- this is an owned pet
+			if Rematch and RematchPetPanel:IsVisible() and idType=="pet" then -- this is an owned pet
 				speciesID, _, level, _, _, _, _, petName, _, petType, _, _, _, _, _, tradeable = C_PetJournal.GetPetInfoByPetID(petID)
 
-			elseif Rematch and RematchPetPanel.List.ScrollFrame:IsVisible() and idType=="species" then -- speciesID for unowned pets
+			elseif Rematch and RematchPetPanel:IsVisible() and idType=="species" then -- speciesID for unowned pets
 				speciesID = petID
 				petName, _, _, _, _, _, _, _, tradeable = C_PetJournal.GetPetInfoBySpeciesID(petID)
-			else
+			--else
 				--petID,speciesID,_,_,level,_,_,petName,_,_,_,_,_,_,_,tradeable =  C_PetJournal.GetPetInfoByIndex(index)
 			end
 
