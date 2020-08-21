@@ -42,11 +42,47 @@ LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {
 		end,
 	})
 
+local optionHandler = {}
+
+-- ----------------------------------------------------------------------------
+-- Config Handlers.
+-- ----------------------------------------------------------------------------
+function optionHandler:Setter(info, value)
+	local option = info[#info]
+	Profile[option] = value
+end
+
+
+function optionHandler:Getter(info)
+	return Profile[info[#info]]
+end
+
+function optionHandler:TSMDisable(info)
+	return not BPCM.TSM_LOADED
+end
+
+
+local function getminlevel()
+
+return BPCM.Profile[Cage_Min_Level]
+end
+
+function optionHandler:SetCageRulesText()
+	local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or BPCM.PriceSources[Profile.TSM_Market] or "DBMarket"
+
+	local price = (	Profile.Cage_Max_Price and L.CAGE_RULES_CUSTOM_PRICE:format(Profile.Cage_Max_Price_Value)) or (Profile.Cage_Custom_TSM_Price and L.CAGE_RULES_CUSTOM_TSM:format(source, Profile.Cage_Custom_TSM_Price_Value)) or ""
+	local skip = L.CAGE_RULES_SKIP:format((Profile.Skip_Caged and L.CAGE_RULES_SKIP_CAGED..",") or "", (Profile.Skip_Auction and L.CAGE_RULES_SKIP_AUCTION.."," ) or "", ((Profile.Handle_PetBlackList and L.CAGE_RULES_SKIP_BLACKLIST)  or ""))
+	local quality = L.CAGE_RULES_QUALITY:format((Profile.Cage_Quality[1] and _G["BATTLE_PET_BREED_QUALITY1"]..", ") or "",(Profile.Cage_Quality[2] and _G["BATTLE_PET_BREED_QUALITY2"]..", " ) or "", (Profile.Cage_Quality[3] and _G["BATTLE_PET_BREED_QUALITY3"]..", ") or "", (Profile.Cage_Quality[4] and _G["BATTLE_PET_BREED_QUALITY4"]) or "")
+	return L.CAGE_RULES_INFO:format(Profile.Cage_Ammount, Profile.Cage_Min_Level ,Profile.Cage_Max_Level, price, Profile.Cage_Max_Quantity, ((Profile.Skip_Auction or Profile.Skip_Caged) and skip) or "", quality)
+end
+
+BPCM.SetCageRulesText = optionHandler.SetCageRulesText
+
 
 --ACE3 Options Constuctor
 local options = {
 	name = "BattlePetCageMatch",
-	handler = BattlePetCageMatch,
+	handler = optionHandler,
 	type = 'group',
 	childGroups = "tab",
 	inline = true,
@@ -80,8 +116,8 @@ local options = {
 					name = L.OPTIONS_TRADEABLE ,
 					desc = L.OPTIONS_TRADEABLE_TOOLTIP,
 					type = "toggle",
-					set = function(info,val) Profile.No_Trade = val end,
-					get = function(info) return Profile.No_Trade end,
+					get = "Getter",
+					set = "Setter",
 					width = "full",
 				},
 
@@ -90,8 +126,8 @@ local options = {
 					name = L.OPTIONS_GLOBAL_LIST,
 					desc = L.OPTIONS_GLOBAL_LIST_TOOLTIP,
 					type = "toggle",
-					set = function(info,val) Profile.Other_Server = val end,
-					get = function(info) return Profile.Other_Server end,
+					get = "Getter",
+					set = "Setter",
 					width = "full"
 				},
 				Inv_Tooltips = {
@@ -99,8 +135,8 @@ local options = {
 					name = L.OPTIONS_INV_TOOLTIPS,
 					desc = nil,
 					type = "toggle",
-					set = function(info,val) Profile.Inv_Tooltips = val end,
-					get = function(info) return Profile.Inv_Tooltips end,
+					get = "Getter",
+					set = "Setter",d,
 					width = "full"
 				},
 				Icon_Tooltips = {
@@ -119,40 +155,22 @@ local options = {
 					type = "header",
 					width = "full",
 				},
-					Cage_Confirm = {
+				Cage_Confirm = {
 					order = 4.9,
 					name = L.OPTIONS_CAGE_CONFIRM,
 					desc = nil,
 					type = "toggle",
-					set = function(info,val) Profile.Cage_Confirm = val end,
-					get = function(info) return Profile.Cage_Confirm end,
+					get = "Getter",
+					set = "Setter",
 					width = "full"
 				},
-				Cage_Output = {
+				Cage_Window = {
 					order = 5,
-					name = L.OPTIONS_CAGE_OUTPUT,
+					name = L.OPTIONS_CAGE_WINDOW,
 					desc = nil,
 					type = "toggle",
-					set = function(info,val) Profile.Cage_Output = val end,
-					get = function(info) return Profile.Cage_Output end,
-					width = "full"
-				},
-				Cage_Once = {
-					order = 5,
-					name = L.OPTIONS_CAGE_ONCE,
-					desc = nil,
-					type = "toggle",
-					set = function(info,val) Profile.Cage_Once = val end,
-					get = function(info) return Profile.Cage_Once end,
-					width = "full"
-				},
-				Skip_Caged = {
-					order = 5.1,
-					name = L.OPTIONS_SKIP_CAGED ,
-					desc = nil,
-					type = "toggle",
-					set = function(info,val) Profile.Skip_Caged = val end,
-					get = function(info) return Profile.Skip_Caged end,
+					get = "Getter",
+					set = "Setter",
 					width = "full"
 				},
 				Incomplete_List = {
@@ -160,8 +178,8 @@ local options = {
 					name = L.OPTIONS_INCOMPLETE_LIST,
 					desc = nil,
 					type = "select",
-					set = function(info,val) Profile.Incomplete_List = val end,
-					get = function(info) return Profile.Incomplete_List end,
+					get = "Getter",
+					set = "Setter",
 					width = "double",
 					values = {["new"] = L.OPTIONS_INCOMPLETE_LIST_1, ["old"] =L.OPTIONS_INCOMPLETE_LIST_2, ["prompt"] = L.OPTIONS_INCOMPLETE_LIST_3}
 				},
@@ -178,8 +196,8 @@ local options = {
 					name = L.OPTIONS_FAVORITE_LIST,
 					desc = nil,
 					type = "select",
-					set = function(info,val) Profile.Favorite_Only = val end,
-					get = function(info) return Profile.Favorite_Only end,
+					get = "Getter",
+					set = "Setter",
 					width = "normal",
 					values = {["include"] = "Include in scan", ["ignore"] ="Ignore in scan", ["only"] = "Only scan favorites"}
 				},
@@ -191,14 +209,39 @@ local options = {
 					width = "double",
 
 				},
+				Cage_Ammount = {
+					order = 6.11,
+					name = L.OPTIONS_CAGE_AMMOUNT,
+					type = "select",
+					type = "range",
+					get = "Getter",
+					set = "Setter",
+					width = "double",
+					min = 1,
+					max = 3,
+					step = 1,
+				},
+				Cage_Min_Level = {
+					order = 6.2,
+					name = L.OPTIONS_CAGE_MIN_LEVEL,
+					desc = OPTIONS_CAGE_MIN_LEVEL_TOOLTIP,
+					type = "select",
+					type = "range",
+					get = "Getter",
+					set = "Setter",
+					width = "double",
+					min = 1,
+					max = 25,
+					step = 1,
+				},
 				Cage_Max_Level = {
 					order = 7,
 					name = L.OPTIONS_CAGE_MAX_LEVEL,
 					desc = OPTIONS_CAGE_MAX_LEVEL_TOOLTIP,
 					type = "select",
 					type = "range",
-					set = function(info,val) Profile.Cage_Max_Level = val end,
-					get = function(info) return Profile.Cage_Max_Level end,
+					get = "Getter",
+					set = "Setter",
 					width = "double",
 					min = 1,
 					max = 25,
@@ -210,21 +253,40 @@ local options = {
 					desc = L.OPTIONS_CAGE_MAX_QUANTITY_TOOLTIP,
 					type = "select",
 					type = "range",
-					set = function(info,val) Profile.Cage_Max_Quantity = val end,
-					get = function(info) return Profile.Cage_Max_Quantity end,
+					get = "Getter",
+					set = "Setter",
 					width = "double",
 					min = 1,
 					max = 3,
 					step = 1,
+				},
+				Cage_Quality = {
+					order = 8.1,
+					name = L.OPTIONS_CAGE_QUALITY,
+					desc = nil,
+					type = "multiselect",
+					get = function(info, key) return Profile.Cage_Quality[key] end,
+					set = function(info, key, value) Profile.Cage_Quality[key] = value end,
+					width = "double",
+					values = {[1] =  _G["BATTLE_PET_BREED_QUALITY1"], [2] =_G["BATTLE_PET_BREED_QUALITY2"], [3] = _G["BATTLE_PET_BREED_QUALITY3"], [4] = _G["BATTLE_PET_BREED_QUALITY4"]}
+				},
+				Skip_Caged = {
+					order = 8.2,
+					name = L.OPTIONS_SKIP_CAGED ,
+					desc = nil,
+					type = "toggle",
+					get = "Getter",
+					set = "Setter",
+					width = "full"
 				},
 				Skip_Auction = {
 					order = 9,
 					name = L.OPTIONS_SKIP_AUCTION ,
 					desc = nil,
 					type = "toggle",
-					set = function(info,val) Profile.Skip_Auction = val end,
-					get = function(info) return Profile.Skip_Auction end,
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					get = "Getter",
+					set = "Setter",
+					disabled = "TSMDisable",
 					width = "full"
 				},
 				Cage_Max_Price = {
@@ -232,10 +294,10 @@ local options = {
 					name = L.OPTIONS_CAGE_MAX_PRICE,
 					desc = nil,
 					type = "toggle",
-					set = function(info,val) Profile.Cage_Max_Price = val end,
+					set = function(info,val) Profile.Cage_Max_Price = val; Profile.Cage_Custom_TSM_Price = false  end,
 					get = function(info) return Profile.Cage_Max_Price end,
 					width = "double",
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					disabled = "TSMDisable",
 				},
 				Cage_Max_Price_Value = {
 					order = 11,
@@ -245,35 +307,46 @@ local options = {
 					set = function(info,val) Profile.Cage_Max_Price_Value = BPCM:CleanValues(val) end,
 					get = function(info) return tostring(Profile.Cage_Max_Price_Value) end,
 					width = "normal",
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					disabled = "TSMDisable",
 				},
 				Cage_Custom_TSM_Price = {
 					order = 11.1,
 					name = L.OPTIONS_TSM_USE_CUSTOM.." (Requirest TSM)",
 					desc = L.OPTIONS_CAGE_CUSTOM_TOOLTIP,
 					type = "toggle",
-					set = function(info,val) Profile.Cage_Custom_TSM_Price = val end,
+					set = function(info,val) Profile.Cage_Custom_TSM_Price = val; Profile.Cage_Max_Price = false end,
 					get = function(info) return Profile.Cage_Custom_TSM_Price end,
 					width = "double",
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					disabled = "TSMDisable",
 				},
 				Cage_Custom_TSM_Price_Value = {
 					order = 11.2,
-					name = L.OPTIONS_TSM_CUSTOM,
-					desc = L.OPTIONS_TSM_CUSTOM_TOOLTIP,
+					name = L.OPTIONS_TSM_CUSTOM_CAGE,
+					desc = L.OPTIONS_TSM_CUSTOM_CAGE,
+					descStyle  = "inline",
 					type = "input",
 					set = function(info,val) Profile.Cage_Custom_TSM_Price_Value = BPCM:TSM_CustomSource(val) end,
 					get = function(info) return Profile.Cage_Custom_TSM_Price_Value end,
 					width = "full",
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					disabled = "TSMDisable",
+				},
+				Caging_Rules = {
+					order = 11.3,
+					name = L.CAGE_RULES,
+					desc = nil,
+					type = "input",
+					width = "full",
+					get = "SetCageRulesText",
+					disabled = true,
+					multiline  = true,
 				},
 				Handle_PetWhiteList = {
 					order = 12,
-					name = L.OPTIONS_HANDLE_PETWHITELIST ,
+					name = L.OPTIONS_HANDLE_PETWHITELIST,
 					desc = nil,
 					type = "select",
-					set = function(info,val) Profile.Handle_PetWhiteList = val end,
-					get = function(info) return Profile.Handle_PetWhiteList end,
+					get = "Getter",
+					set = "Setter",
 					width = "normal",
 					values = {["include"] = "Include after normal scan", ["only"] = "Only cage list", ["disable"] = "Do not use list"}
 				},
@@ -354,31 +427,31 @@ local options = {
 					name = L.OPTIONS_TSM_VALUE,
 					desc = L.OPTIONS_TSM_VALUE_TOOLTIP,
 					type = "toggle",
-					set = function(info,val) Profile.TSM_Value = val end,
-					get = function(info) return Profile.TSM_Value end,
+					get = "Getter",
+					set = "Setter",
 					width = "double",
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					disabled = "TSMDisable",
 				},
 				TSM_Market = {
 					order = 18,
 					name = L.OPTIONS_TSM_DATASOURCE,
 					--desc = "TSM Source to get price data.",
 					type = "select",
-					set = function(info,val) Profile.TSM_Market = val end,
-					get = function(info) return Profile.TSM_Market end,
+					get = "Getter",
+					set = "Setter",
 					width = "normal",
 					values = function() return BPCM:TSM_Source() end,
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					disabled = "TSMDisable",
 				},
 				TSM_Use_Custom = {
 					order = 18.1,
 					name = L.OPTIONS_TSM_USE_CUSTOM,
 					--desc = L.OPTIONS_TSM_FILTER_TOOLTIP,
 					type = "toggle",
-					set = function(info,val) Profile.TSM_Use_Custom = val end,
-					get = function(info) return Profile.TSM_Use_Custom end,
+					get = "Getter",
+					set = "Setter",
 					width = "double",
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					disabled = "TSMDisable",
 				},
 				TSM_Custom = {
 					order = 18.2,
@@ -388,17 +461,17 @@ local options = {
 					set = function(info,val) Profile.TSM_Custom = BPCM:TSM_CustomSource(val) end,
 					get = function(info) return Profile.TSM_Custom end,
 					width = "full",
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					disabled = "TSMDisable",
 				},
 				TSM_Filter = {
 					order = 19,
 					name = L.OPTIONS_TSM_FILTER,
 					desc = L.OPTIONS_TSM_FILTER_TOOLTIP,
 					type = "toggle",
-					set = function(info,val) Profile.TSM_Filter = val end,
-					get = function(info) return Profile.TSM_Filter end,
+					get = "Getter",
+					set = "Setter",
 					width = "normal",
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					disabled = "TSMDisable",
 				},
 
 				TSM_Filter_Value = {
@@ -409,47 +482,46 @@ local options = {
 					set = function(info,val) Profile.TSM_Filter_Value = BPCM:CleanValues(val) end,
 					get = function(info) return tostring(Profile.TSM_Filter_Value) end,
 					width = "normal",
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					disabled = "TSMDisable",
 				},
-
 				TSM_Rank = {
 					order = 21,
 					name = L.OPTIONS_TSM_RANK,
 					type = "select",
 					type = "toggle",
-					set = function(info,val) Profile.TSM_Rank = val end,
-					get = function(info) return Profile.TSM_Rank end,
+					get = "Getter",
+					set = "Setter",
 					width = "full",
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					disabled = "TSMDisable",
 				},
 				TSM_Rank_Medium = {
 					order = 22,
 					name = L.OPTIONS_TSM_RANK_MEDIUM,
 					type = "select",
 					type = "range",
-					set = function(info,val) Profile.TSM_Rank_Medium = val end,
-					get = function(info) return Profile.TSM_Rank_Medium end,
+					get = "Getter",
+					set = "Setter",
 					width = "normal",
 					min = 1,
 					max = 10,
 					step = 1,
 					isPercent = true,
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					disabled = "TSMDisable",
 				},
 				TSM_Rank_High = {
 					order = 23,
 					name = L.OPTIONS_TSM_RANK_HIGH,
 					type = "select",
 					type = "range",
-					set = function(info,val) Profile.TSM_Rank_High = val end,
-					get = function(info) return Profile.TSM_Rank_High end,
+					get = "Getter",
+					set = "Setter",
 					width = "normal",
 					min = 1,
 					max = 10,
 					step = 1,
 					isPercent = true,
 					icon = "Interface/ICONS/INV_Misc_Coin_17",
-					disabled = function(info) return not BPCM.TSM_LOADED end,
+					disabled = "TSMDisable",
 				},
 			},
 		},
@@ -476,13 +548,15 @@ local defaults = {
 		Icon_Tooltips = {["db"] = false,
 				["value"] = false,
 				["cage"] = false,},
-		Cage_Output = false,
+		Cage_Window = true,
 		Cage_Once = true,
+		Cage_Ammount = 1, 
 		Skip_Caged = true,
 		Incomplete_List = "old",
 		Skip_Auction = true,
 		Favorite_Only = "include",
-		Cage_Max_Level = 1,
+		Cage_Max_Level = 25,
+		Cage_Min_Level = 1, 
 		Cage_Max_Price = false,
 		Cage_Max_Price_Value = 100,
 		Cage_Max_Quantity = 1,
@@ -492,6 +566,7 @@ local defaults = {
 		Handle_PetBlackList = true,
 		Pet_Blacklist = {},
 		Cage_Confirm = false,
+		Cage_Quality = {true, true, true, true}
 	}
 }
 
@@ -814,7 +889,7 @@ local UpdateButton
 	if  ( numPets < 1 ) then return end  --If there are no Pets then nothing needs to be done.
 
 	local numDisplayedPets =(Rematch and RematchPetPanel:IsVisible() and  #roster.petList)
-		or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting:GetNumPets())
+		or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting and BPCM.Sorting:GetNumPets())
 		or C_PetJournal.GetNumPets()
 
 	for i=1, #buttons do
@@ -825,7 +900,7 @@ local UpdateButton
 		if ( displayIndex <= numDisplayedPets ) then
 
 			local index = (Rematch and RematchPetPanel:IsVisible() and displayIndex)
-			or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting:GetPetByIndex(displayIndex)["index"])
+			or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting and BPCM.Sorting:GetPetByIndex(displayIndex)["index"])
 			or displayIndex
 
 			local speciesID, level, petName, tradeable
@@ -1137,10 +1212,10 @@ end
 function BPCM.TSM:GetAuctionQuantity(pBattlePetID)
 	if TSM_Version == 3 then 
 		return TSMAPI.Inventory:GetAuctionQuantity(pBattlePetID)
-	elseif TSM_Version < 4.10 then 
+	elseif TSMAPI_FOUR then  
 		return TSMAPI_FOUR.Inventory.GetAuctionQuantity(pBattlePetID)
 	else
-		return  TSM_API.GetAuctionQuantity(itemString)
+		return  TSM_API.GetAuctionQuantity(pBattlePetID)
 	end
 end
 
