@@ -93,7 +93,7 @@ L.CAGE_COMPLETE  = "All Pets Caged"
 
 L.BPCM_MOUSEOVER_CAGE = "Cage pet mouse is currently over"
 
-L.TSM_CUSTOM_ERROR ="%s is not a valid custom price and gave the following error: %s"
+L.TSM_CUSTOM_ERROR ="Not a valid custom price: %s"
 
 
 L.STOP_CAGING_DIALOG_TEXT = "Stop Caging?"

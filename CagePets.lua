@@ -19,12 +19,14 @@ local LISTWINDOW
 
 local function TSMPricelookup(pBattlePetID)
 	if (not BPCM.TSM_LOADED) or (not Profile.Cage_Max_Price) then return true end
+		if Profile.Cage_Max_Price_Value == ""  or not Cage_Max_Price_Value then print("No TSM Price Source Entered. Using DBMarket") return true end
 	return (BPCM.TSM:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= (Profile.Cage_Max_Price_Value *100*100)
 end
 
 
 local function TSMCustomPricelookup(pBattlePetID)
 	if (not BPCM.TSM_LOADED) or (not Profile.Cage_Custom_TSM_Price) then return true end
+	if Profile.Cage_Custom_TSM_Price_Value == "" or not Profile.Cage_Custom_TSM_Price_Value then print("No TSM Price Source Entered") return true end
 	local custom_value = (BPCM.TSM:GetCustomPriceValue(Profile.Cage_Custom_TSM_Price_Value, "p:"..pBattlePetID..":1:2") or 0)
 	return (BPCM.TSM:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= custom_value
 end

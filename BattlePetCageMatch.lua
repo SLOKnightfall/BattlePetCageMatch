@@ -61,16 +61,52 @@ function optionHandler:TSMDisable(info)
 	return not BPCM.TSM_LOADED
 end
 
-
-local function getminlevel()
-
-return BPCM.Profile[Cage_Min_Level]
+function optionHandler:ValidatePrice(info, value)
+	local option = info[#info]
+	local cleanValue = tonumber((string.match(value,"(%d*)")))
+	--return tonumber(value) or 0
+	if not cleanValue then
+		return "Price Error"
+	else 
+		return true
+	end
 end
+
+function optionHandler:ValidateTSMSource(info, value)
+	local option = info[#info]
+	local isValid, err = BPCM.TSM:ValidateCustomPrice(value)
+	if not isValid then
+		if option == "TSM_Custom" then
+			Profile[option] = Profile[option] or "DBMarket"
+		else 
+			Profile[option] = Profile[option] or "DBMinBuyout"
+		end
+		return L.TSM_CUSTOM_ERROR:format(err)
+	else
+	--optionHandler:Setter(info, value)
+		return true
+	end	
+
+end
+
+
+function optionHandler:ValidateLevels(info, value)
+	if option == "Cage_Min_Level" and value > Profile.Cage_Max_Level then
+		info.handler:Setter(info, Profile.Cage_Max_Level)
+		return "Error: Min Level above Max Level"
+	elseif option == "Cage_Max_Level" and value < Profile.Cage_Min_Level then
+		--Profile.Cage_Min_Level = Profile.Cage_Max_Level
+		info.handler:Setter(info, Profile.Cage_Min_Level)
+	 	return "Error: Max Level below Min Level"
+	else
+		return true
+	end
+end
+
 
 function optionHandler:SetCageRulesText()
 	local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or BPCM.PriceSources[Profile.TSM_Market] or "DBMarket"
-
-	local price = (	Profile.Cage_Max_Price and L.CAGE_RULES_CUSTOM_PRICE:format(Profile.Cage_Max_Price_Value)) or (Profile.Cage_Custom_TSM_Price and L.CAGE_RULES_CUSTOM_TSM:format(source, Profile.Cage_Custom_TSM_Price_Value)) or ""
+	local price = (	Profile.Cage_Max_Price and L.CAGE_RULES_CUSTOM_PRICE:format(Profile.Cage_Max_Price_Value or "")) or (Profile.Cage_Custom_TSM_Price and L.CAGE_RULES_CUSTOM_TSM:format(source, Profile.Cage_Custom_TSM_Price_Value or "")) or ""
 	local skip = L.CAGE_RULES_SKIP:format((Profile.Skip_Caged and L.CAGE_RULES_SKIP_CAGED..",") or "", (Profile.Skip_Auction and L.CAGE_RULES_SKIP_AUCTION.."," ) or "", ((Profile.Handle_PetBlackList and L.CAGE_RULES_SKIP_BLACKLIST)  or ""))
 	local quality = L.CAGE_RULES_QUALITY:format((Profile.Cage_Quality[1] and _G["BATTLE_PET_BREED_QUALITY1"]..", ") or "",(Profile.Cage_Quality[2] and _G["BATTLE_PET_BREED_QUALITY2"]..", " ) or "", (Profile.Cage_Quality[3] and _G["BATTLE_PET_BREED_QUALITY3"]..", ") or "", (Profile.Cage_Quality[4] and _G["BATTLE_PET_BREED_QUALITY4"]) or "")
 	return L.CAGE_RULES_INFO:format(Profile.Cage_Ammount, Profile.Cage_Min_Level ,Profile.Cage_Max_Level, price, Profile.Cage_Max_Quantity, ((Profile.Skip_Auction or Profile.Skip_Caged) and skip) or "", quality)
@@ -136,7 +172,7 @@ local options = {
 					desc = nil,
 					type = "toggle",
 					get = "Getter",
-					set = "Setter",d,
+					set = "Setter",
 					width = "full"
 				},
 				Icon_Tooltips = {
@@ -233,6 +269,7 @@ local options = {
 					min = 1,
 					max = 25,
 					step = 1,
+					validate = "ValidateLevels",
 				},
 				Cage_Max_Level = {
 					order = 7,
@@ -246,6 +283,7 @@ local options = {
 					min = 1,
 					max = 25,
 					step = 1,
+					validate = "ValidateLevels",
 				},
 				Cage_Max_Quantity = {
 					order = 8,
@@ -294,7 +332,7 @@ local options = {
 					name = L.OPTIONS_CAGE_MAX_PRICE,
 					desc = nil,
 					type = "toggle",
-					set = function(info,val) Profile.Cage_Max_Price = val; Profile.Cage_Custom_TSM_Price = false  end,
+					set = function(info,val) Profile.Cage_Max_Price = val; if (val and Profile.Cage_Custom_TSM_Price) then Profile.Cage_Custom_TSM_Price = false end; end,
 					get = function(info) return Profile.Cage_Max_Price end,
 					width = "double",
 					disabled = "TSMDisable",
@@ -306,15 +344,16 @@ local options = {
 					type = "input",
 					set = function(info,val) Profile.Cage_Max_Price_Value = BPCM:CleanValues(val) end,
 					get = function(info) return tostring(Profile.Cage_Max_Price_Value) end,
+					validate = "ValidatePrice",
 					width = "normal",
 					disabled = "TSMDisable",
 				},
 				Cage_Custom_TSM_Price = {
 					order = 11.1,
-					name = L.OPTIONS_TSM_USE_CUSTOM.." (Requirest TSM)",
+					name = L.OPTIONS_TSM_USE_CUSTOM.." (Requires TSM)",
 					desc = L.OPTIONS_CAGE_CUSTOM_TOOLTIP,
 					type = "toggle",
-					set = function(info,val) Profile.Cage_Custom_TSM_Price = val; Profile.Cage_Max_Price = false end,
+					set = function(info,val) Profile.Cage_Custom_TSM_Price = val; if (val and Profile.Cage_Max_Price) then Profile.Cage_Max_Price = false end;  end,
 					get = function(info) return Profile.Cage_Custom_TSM_Price end,
 					width = "double",
 					disabled = "TSMDisable",
@@ -325,10 +364,13 @@ local options = {
 					desc = L.OPTIONS_TSM_CUSTOM_CAGE,
 					descStyle  = "inline",
 					type = "input",
-					set = function(info,val) Profile.Cage_Custom_TSM_Price_Value = BPCM:TSM_CustomSource(val) end,
-					get = function(info) return Profile.Cage_Custom_TSM_Price_Value end,
+					--set = function(info,val) Profile.Cage_Custom_TSM_Price_Value = val end,
+					--get = function(info) return Profile.Cage_Custom_TSM_Price_Value end,
+					get = "Getter",
+					set = "Setter",
 					width = "full",
 					disabled = "TSMDisable",
+					validate = "ValidateTSMSource",
 				},
 				Caging_Rules = {
 					order = 11.3,
@@ -458,10 +500,13 @@ local options = {
 					name = L.OPTIONS_TSM_CUSTOM,
 					desc = L.OPTIONS_TSM_CUSTOM_TOOLTIP,
 					type = "input",
-					set = function(info,val) Profile.TSM_Custom = BPCM:TSM_CustomSource(val) end,
-					get = function(info) return Profile.TSM_Custom end,
+					--set = function(info,val) Profile.TSM_Custom = BPCM:TSM_CustomSource(val) end,
+					--get = function(info) return Profile.TSM_Custom end,
+					get = "Getter",
+					set = "Setter",
 					width = "full",
 					disabled = "TSMDisable",
+					validate = "ValidateTSMSource",
 				},
 				TSM_Filter = {
 					order = 19,
@@ -540,7 +585,8 @@ local defaults = {
 		TSM_Filter_Value = 0,
 		TSM_Market = "DBMarket",
 		TSM_Use_Custom = false,
-		TSM_Custom = "",
+		TSM_Custom = "DBMarket",
+		Cage_Custom_TSM_Price_Value = "DBMinBuyout",
 		TSM_Rank = true,
 		TSM_Rank_Medium = 2,
 		TSM_Rank_High = 5,
@@ -779,7 +825,7 @@ end
 function BPCM:TSM_CustomSource(price)
 	local isValid, err = BPCM.TSM:ValidateCustomPrice(price)
 	if not isValid then
-		--print(string.format(L.TSM_CUSTOM_ERROR, BPCM.TSM:GetInlineColor("link") .. price .. "|r", err))
+		print(string.format(L.TSM_CUSTOM_ERROR, BPCM.TSM:GetInlineColor("link") .. price .. "|r", err))
 	else
 		return price
 	end
@@ -1054,6 +1100,8 @@ function BPCM:OnInitialize()
 
 	BPCM.Profile = self.db.profile
 	Profile = BPCM.Profile
+	if Profile.TSM_Custom == "" then Profile.TSM_Custom = "DBMarket" end
+	if Profile.Cage_Custom_TSM_Price_Value == "" then Profile.Cage_Custom_TSM_Price_Value = "DBMinBuyout" end 
 
 	BPCM.BlackListDB = BPCM.PetBlacklist:new()
 	BPCM.WhiteListDB = BPCM.PetWhitelist:new()
@@ -1129,7 +1177,7 @@ function BPCM:UpdateRematch(button, petID)
 	local pet_icon_frame =  button.Pet
 	local speciesID, level, petName, tradeable
 	local idType = (Rematch and RematchPetPanel:IsVisible() and Rematch:GetIDType(petID)) or nil
-
+print(button.Breed:IsShown())
 	--Get data from proper indexes based on addon loaded and visable
 	if Rematch and RematchPetPanel:IsVisible() and idType == "pet" then -- this is an owned pet
 		speciesID, _, level, _, _, _, _, petName, _, petType, _, _, _, _, _, tradeable = C_PetJournal.GetPetInfoByPetID(petID)
@@ -1144,8 +1192,9 @@ function BPCM:UpdateRematch(button, petID)
 	if  button.BP_InfoFrame then
 	else
 		local frame = CreateFrame("Frame", "CageMatch_RC"..recount_index, button, "BPCM_ICON_TEMPLATE")
+		local offset = (button.Breed:IsShown() and (0-button.Breed:GetStringWidth())-8) or 0
 		frame:ClearAllPoints()
-		frame:SetPoint("BOTTOMRIGHT", 0,0);
+		frame:SetPoint("BOTTOMRIGHT", offset,0);
 		frame.no_trade:ClearAllPoints()
 		frame.no_trade:SetPoint("BOTTOMRIGHT", 0,0);
 		button.BP_InfoFrame  = frame
