@@ -99,8 +99,9 @@ L.TSM_CUSTOM_ERROR ="Not a valid custom price: %s"
 L.STOP_CAGING_DIALOG_TEXT = "Stop Caging?"
 L.START_CAGING_DIALOG_TEXT = "Start Caging?"
 
-L.LIST_DISPLAY_TEXT = "%s - Level: %d %s"
+L.LIST_DISPLAY_TEXT = "%s - Level: %d %s %s"
 L.LIST_DISPLAY_TEXT_PRICE = "- Value: %s"
+L.CAGE_RULES_PRICE_TO_CAGE = "- Value to Cage: %s"
 
 L.CAGE_RULES_INFO = "-Caging up to %d pet(s) between levels %d - %d, %s that I have at least %d or more of. %s %s"
 L.SKIPPING_RULE = "Skipping pets in inventory"
@@ -115,3 +116,5 @@ L.CAGE_RULES_SKIP_BLACKLIST = "Blacklisted Pets"
 L.NO_PETS_TO_CAGE = "No pets match crieteria"
 L.OPTIONS_CAGE_QUALITY = "Quality of pet to cage"
 L.CAGE_RULES_QUALITY = "\n-Caging Quality: %s%s%s%s"
+
+L.OPTIONS_SHOW_TSM_CUSTOM = "Show value on cage list."

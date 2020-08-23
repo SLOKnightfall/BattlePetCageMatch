@@ -358,8 +358,18 @@ local options = {
 					width = "double",
 					disabled = "TSMDisable",
 				},
-				Cage_Custom_TSM_Price_Value = {
+				Cage_Show_Custom_TSM_Price = {
 					order = 11.2,
+					name = L.OPTIONS_SHOW_TSM_CUSTOM,
+					desc = L.OPTIONS_SHOW_TSM_CUSTOM,
+					type = "toggle",
+					get = "Getter",
+					set = "Setter",
+					--width = "double",
+					disabled = "TSMDisable",
+				},
+				Cage_Custom_TSM_Price_Value = {
+					order = 11.3,
 					name = L.OPTIONS_TSM_CUSTOM_CAGE,
 					desc = L.OPTIONS_TSM_CUSTOM_CAGE,
 					descStyle  = "inline",
@@ -372,8 +382,9 @@ local options = {
 					disabled = "TSMDisable",
 					validate = "ValidateTSMSource",
 				},
+
 				Caging_Rules = {
-					order = 11.3,
+					order = 11.5,
 					name = L.CAGE_RULES,
 					desc = nil,
 					type = "input",
@@ -612,7 +623,8 @@ local defaults = {
 		Handle_PetBlackList = true,
 		Pet_Blacklist = {},
 		Cage_Confirm = false,
-		Cage_Quality = {true, true, true, true}
+		Cage_Quality = {true, true, true, true},
+		Cage_Show_Custom_TSM_Price = false,
 	}
 }
 
@@ -1177,7 +1189,7 @@ function BPCM:UpdateRematch(button, petID)
 	local pet_icon_frame =  button.Pet
 	local speciesID, level, petName, tradeable
 	local idType = (Rematch and RematchPetPanel:IsVisible() and Rematch:GetIDType(petID)) or nil
-print(button.Breed:IsShown())
+
 	--Get data from proper indexes based on addon loaded and visable
 	if Rematch and RematchPetPanel:IsVisible() and idType == "pet" then -- this is an owned pet
 		speciesID, _, level, _, _, _, _, petName, _, petType, _, _, _, _, _, tradeable = C_PetJournal.GetPetInfoByPetID(petID)

@@ -12,14 +12,20 @@ local learn_queue = {}
 local skipPetList = {}
 local learnindex = nil
 local skil_list = {}
-local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or BPCM.PriceSources[Profile.TSM_Market] or "DBMarket"
+--local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or BPCM.PriceSources[Profile.TSM_Market] or "DBMarket"
 local cageListButton
 local LISTWINDOW
 
 
+local function GetPriceSource()
+	return  (Profile.TSM_Use_Custom and Profile.TSM_Custom) or BPCM.PriceSources[Profile.TSM_Market] or "DBMarket"
+end
+
+
 local function TSMPricelookup(pBattlePetID)
 	if (not BPCM.TSM_LOADED) or (not Profile.Cage_Max_Price) then return true end
-		if Profile.Cage_Max_Price_Value == ""  or not Cage_Max_Price_Value then print("No TSM Price Source Entered. Using DBMarket") return true end
+	local source = GetPriceSource()
+	if Profile.Cage_Max_Price_Value == ""  or not Profile.Cage_Max_Price_Value then Profile.Cage_Max_Price_Value = 0 end
 	return (BPCM.TSM:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= (Profile.Cage_Max_Price_Value *100*100)
 end
 
@@ -27,6 +33,7 @@ end
 local function TSMCustomPricelookup(pBattlePetID)
 	if (not BPCM.TSM_LOADED) or (not Profile.Cage_Custom_TSM_Price) then return true end
 	if Profile.Cage_Custom_TSM_Price_Value == "" or not Profile.Cage_Custom_TSM_Price_Value then print("No TSM Price Source Entered") return true end
+	local source = GetPriceSource()
 	local custom_value = (BPCM.TSM:GetCustomPriceValue(Profile.Cage_Custom_TSM_Price_Value, "p:"..pBattlePetID..":1:2") or 0)
 	return (BPCM.TSM:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= custom_value
 end
@@ -455,6 +462,8 @@ function BPCM:GenerateListView()
 	heading:SetFullWidth(true)
 	scroll:AddChild(heading)
 
+	local source = GetPriceSource()
+
 	for i=BPCM.eventFrame.petIndex, #petsToCage do
 		local petID = petsToCage[i]
 		local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, tradable, unique, obtainable = C_PetJournal.GetPetInfoByPetID(petID)
@@ -462,13 +471,13 @@ function BPCM:GenerateListView()
 
 			local CheckBox = AceGUI:Create("CheckBox")
 			local priceText = ""
-			local priceText = ""
-			if BPCM.TSM_LOADED and speciesID then 
+			local cageText = ""
+			if BPCM.TSM_LOADED and speciesID and (Profile.Cage_Max_Price or Profile.Cage_Custom_TSM_Price) then 
 				priceText =  L.LIST_DISPLAY_TEXT_PRICE:format(BPCM.TSM:MoneyToString(BPCM.TSM:GetCustomPriceValue(source, "p:"..speciesID..":1:2") or 0 ))
-			
+				cageText = ((Profile.Cage_Custom_TSM_Price and Profile.Cage_Show_Custom_TSM_Price) and L.CAGE_RULES_PRICE_TO_CAGE:format(BPCM.TSM:MoneyToString(BPCM.TSM:GetCustomPriceValue(Profile.Cage_Custom_TSM_Price_Value, "p:"..speciesID..":1:2") or 0 ))) or ""
 			end
 
-			CheckBox:SetLabel(L.LIST_DISPLAY_TEXT:format(C_PetJournal.GetBattlePetLink(petID), level, priceText ))
+			CheckBox:SetLabel(L.LIST_DISPLAY_TEXT:format(C_PetJournal.GetBattlePetLink(petID), level, priceText, cageText ))
 			CheckBox:SetValue(true)
 			CheckBox:SetImage(icon)
 			CheckBox:SetFullWidth(true)
