@@ -9,7 +9,7 @@
 
 local BPCM = select(2, ...)
 BPCM.TSM = {}
-local TSM_Version = 3
+local TSM_Version = 4
 local addonName, addon = ...
 _G["BPCM"] = BPCM
 BPCM = LibStub("AceAddon-3.0"):NewAddon(addon,"BattlePetCageMatch", "AceEvent-3.0", "AceConsole-3.0", "AceHook-3.0")
@@ -818,7 +818,7 @@ function BPCM:pricelookup(itemID)
 	return tooltip, rank
 end
 
-
+local l
 ---Initilizes of data sources from TSM for the options dropdown
 --Return:  sources - table of data sources available
 function BPCM:TSM_Source()
@@ -1273,10 +1273,8 @@ end
 function BPCM.TSM:GetAuctionQuantity(pBattlePetID)
 	if TSM_Version == 3 then 
 		return TSMAPI.Inventory:GetAuctionQuantity(pBattlePetID)
-	elseif TSMAPI_FOUR then  
-		return TSMAPI_FOUR.Inventory.GetAuctionQuantity(pBattlePetID)
 	else
-		return  TSM_API.GetAuctionQuantity(pBattlePetID)
+		return TSM_API.GetAuctionQuantity(pBattlePetID)
 	end
 end
 
@@ -1296,6 +1294,7 @@ function BPCM.TSM:GetPriceSources()
 		return TSMAPI:GetPriceSources()
 	else
 		local table = {}
+		wipe(BPCM.PriceSources)
 		 TSM_API.GetPriceSourceKeys(BPCM.PriceSources)
 		return BPCM.PriceSources
 	end
