@@ -47,9 +47,9 @@ end
 
 
 function Cage:Cage_Message(msg)
-	if Profile.Cage_Output then 
+	--if Profile.Cage_Output then 
 		DEFAULT_CHAT_FRAME:AddMessage("\124cffc79c6eCageing:\124r \124cff69ccf0" .. msg .."\124r")
-	end
+	--end
 end
 
 
@@ -57,7 +57,7 @@ end
 function Cage:GeneratePetList()
 	C_PetJournal.ClearSearchFilter() -- Clear filter so we have a full pet list.
 	C_PetJournal.SetPetSortParameter(LE_SORT_BY_LEVEL) -- Sort by level, ensuring higher level pets are encountered first.
-
+	Cage:Cage_Message(L.BUILDING_CAGE_LIST)
 	local total, owned = C_PetJournal.GetNumPets()
 	local petCache = {}
 	petsToCage = {}
@@ -67,6 +67,8 @@ function Cage:GeneratePetList()
 	for index = 1, owned do -- Loop every pet owned (unowned will be over the offset).
 		local pGuid, pBattlePetID, _, pNickname, pLevel, pIsFav, _, pName, _, _, _, _, _, _, _, pIsTradeable = C_PetJournal.GetPetInfoByIndex(index)
 		local _, _, _, _, rarity = C_PetJournal.GetPetStats(pGuid)
+		local isSlotted = C_PetJournal.PetIsSlotted(pGuid)
+
 		if pBattlePetID then 
 			local numCollected = C_PetJournal.GetNumCollectedInfo(tonumber(pBattlePetID))
 			petCache[pName] = (pIsTradeable and pGuid) or nil
@@ -76,6 +78,7 @@ function Cage:GeneratePetList()
 			and pIsTradeable 
 			--and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level))
 			and numCollected >= Profile.Cage_Max_Quantity
+			and not isSlotted
 			and ((Profile.Skip_Caged and not BPCM.bagResults[pBattlePetID]) or (not Profile.Skip_Caged and true))
 			and ((Profile.Handle_PetBlackList and not BPCM.BlackListDB:FindIndex(pName)) or (not Profile.Handle_PetBlackList and true))
 			--and ((Profile.Handle_PetWhiteList == "only" and BPCM.WhiteListDB:FindIndex(pName)) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
@@ -99,6 +102,8 @@ function Cage:GeneratePetList()
 					petCache[pBattlePetID] = true
 					petCageCount[pBattlePetID] = petCageCount[pBattlePetID] + 1
 				end
+			elseif isSlotted then
+				Cage:Cage_Message(pName .. " :: " .. L.SLOTTED_PET_MESSAGE)
 
 			elseif 	 (Profile.Handle_PetBlackList and  BPCM.BlackListDB:FindIndex(pName)) then
 				Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE_BLACKLIST)
@@ -124,7 +129,7 @@ function Cage:GeneratePetList()
 			Cage:StartCageing(BPCM.eventFrame.petIndex)
 		end
 	else
-		DEFAULT_CHAT_FRAME:AddMessage("\124cffc79c6eCageing:\124r \124cff69ccf0" .. L.NO_PETS_TO_CAGE .."\124r")
+		Cage:Cage_Message(L.NO_PETS_TO_CAGE)
 	end
 end
 
@@ -137,14 +142,16 @@ function Cage:StartCageing(index)
 		return false
 	end
 
-	cageListButton:SetText(L.STOP_CAGING_DIALOG_TEXT)
-	cageListButton:SetCallback("OnClick", function() 	
-		if BPCM.eventFrame.pendingUpdate == true then
-			BPCM.eventFrame.pendingUpdate = false
-			StaticPopup_Show("BPCM_STOP_CAGING")
-			return
-		end 
-	end)
+	if Profile.Cage_Window then 
+		cageListButton:SetText(L.STOP_CAGING_DIALOG_TEXT)
+		cageListButton:SetCallback("OnClick", function() 	
+			if BPCM.eventFrame.pendingUpdate == true then
+				BPCM.eventFrame.pendingUpdate = false
+				StaticPopup_Show("BPCM_STOP_CAGING")
+				return
+			end 
+		end)
+	end
 
 	if skipPetList[petsToCage[index]] then
 		removeIndex[index] = true
@@ -154,10 +161,10 @@ function Cage:StartCageing(index)
 	else
 		--The Cagepet function is delayed slightly so the game does not get overloaded
 		C_Timer.NewTimer(.25, function()C_PetJournal.CagePetByID(petsToCage[index]) end)
-		BPCM.eventFrame.petIndex = index + 1
-		BPCM.eventFrame.pendingUpdate = true
-		return true
-	end
+			BPCM.eventFrame.petIndex = index + 1
+			BPCM.eventFrame.pendingUpdate = true
+			return true
+		end
 end
 
 
@@ -312,10 +319,10 @@ StaticPopupDialogs["BPCM_STOP_CAGING"] = {
 	button2 = L.CONTINUE_CAGING_DIALOG_YES,
 	button1 = L.CONTINUE_CAGING_DIALOG_NO,
 	OnCancel = function () 
-		LISTWINDOW:Hide()
+		if LISTWINDOW then LISTWINDOW:Hide() end
 	end,
 	OnAccept = function (_,reason)
-	Cage:StartCageing(BPCM.eventFrame.petIndex)
+		Cage:StartCageing(BPCM.eventFrame.petIndex)
 	end,
 	OnShow = function(self) 
 	    self:SetFrameLevel(20)
