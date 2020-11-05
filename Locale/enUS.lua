@@ -76,6 +76,8 @@ L.CAGED_MESSAGE_WHITELIST = "Pet caged due to Whitelist."
 L.CAGED_MESSAGE_BLACKLIST = "Pet ignored due to Blacklist."
 
 L.SLOTTED_PET_MESSAGE = "Pet is in Pet Battle Slot and skipped"
+L.HURT_PET_MESSAGE = "Pet is injured and skipped"
+
 
 L.CONTINUE_CAGING_DIALOG_TEXT = "Continue Caging Old List?"
 L.CONTINUE_CAGING_DIALOG_YES = "Yes"

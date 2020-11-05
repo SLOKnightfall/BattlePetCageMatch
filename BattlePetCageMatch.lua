@@ -91,12 +91,20 @@ end
 
 
 function optionHandler:ValidateLevels(info, value)
+	value = tonumber(value)
+	local option = info[#info]
+	if not tonumber(value) then 
+		return "Error: Must Be Number"
+	elseif value > 25  or  value < 1 then 
+		return "Error: Must Be Number from 1 to 25"
+	end
+
 	if option == "Cage_Min_Level" and value > Profile.Cage_Max_Level then
-		info.handler:Setter(info, Profile.Cage_Max_Level)
+		--info.handler:Setter(info, Profile.Cage_Max_Level)
 		return "Error: Min Level above Max Level"
 	elseif option == "Cage_Max_Level" and value < Profile.Cage_Min_Level then
 		--Profile.Cage_Min_Level = Profile.Cage_Max_Level
-		info.handler:Setter(info, Profile.Cage_Min_Level)
+		--info.handler:Setter(info, Profile.Cage_Min_Level)
 	 	return "Error: Max Level below Min Level"
 	else
 		return true
@@ -122,6 +130,8 @@ local options = {
 	type = 'group',
 	childGroups = "tab",
 	inline = true,
+	get = "Getter",
+	set = "Setter",
 	args = {
 		settings={
 			name = "Options",
@@ -152,8 +162,6 @@ local options = {
 					name = L.OPTIONS_TRADEABLE ,
 					desc = L.OPTIONS_TRADEABLE_TOOLTIP,
 					type = "toggle",
-					get = "Getter",
-					set = "Setter",
 					width = "full",
 				},
 
@@ -162,8 +170,6 @@ local options = {
 					name = L.OPTIONS_GLOBAL_LIST,
 					desc = L.OPTIONS_GLOBAL_LIST_TOOLTIP,
 					type = "toggle",
-					get = "Getter",
-					set = "Setter",
 					width = "full"
 				},
 				Inv_Tooltips = {
@@ -171,8 +177,6 @@ local options = {
 					name = L.OPTIONS_INV_TOOLTIPS,
 					desc = nil,
 					type = "toggle",
-					get = "Getter",
-					set = "Setter",
 					width = "full"
 				},
 				Icon_Tooltips = {
@@ -196,8 +200,6 @@ local options = {
 					name = L.OPTIONS_CAGE_CONFIRM,
 					desc = nil,
 					type = "toggle",
-					get = "Getter",
-					set = "Setter",
 					width = "full"
 				},
 				Cage_Window = {
@@ -205,8 +207,6 @@ local options = {
 					name = L.OPTIONS_CAGE_WINDOW,
 					desc = nil,
 					type = "toggle",
-					get = "Getter",
-					set = "Setter",
 					width = "full"
 				},
 				Incomplete_List = {
@@ -214,8 +214,6 @@ local options = {
 					name = L.OPTIONS_INCOMPLETE_LIST,
 					desc = nil,
 					type = "select",
-					get = "Getter",
-					set = "Setter",
 					width = "double",
 					values = {["new"] = L.OPTIONS_INCOMPLETE_LIST_1, ["old"] =L.OPTIONS_INCOMPLETE_LIST_2, ["prompt"] = L.OPTIONS_INCOMPLETE_LIST_3}
 				},
@@ -232,8 +230,6 @@ local options = {
 					name = L.OPTIONS_FAVORITE_LIST,
 					desc = nil,
 					type = "select",
-					get = "Getter",
-					set = "Setter",
 					width = "normal",
 					values = {["include"] = "Include in scan", ["ignore"] ="Ignore in scan", ["only"] = "Only scan favorites"}
 				},
@@ -250,8 +246,6 @@ local options = {
 					name = L.OPTIONS_CAGE_AMMOUNT,
 					type = "select",
 					type = "range",
-					get = "Getter",
-					set = "Setter",
 					width = "double",
 					min = 1,
 					max = 3,
@@ -261,38 +255,27 @@ local options = {
 					order = 6.2,
 					name = L.OPTIONS_CAGE_MIN_LEVEL,
 					desc = OPTIONS_CAGE_MIN_LEVEL_TOOLTIP,
-					type = "select",
-					type = "range",
-					get = "Getter",
-					set = "Setter",
+					type = "input",
 					width = "double",
-					min = 1,
-					max = 25,
-					step = 1,
+					set = function(info,val) Profile.Cage_Min_Level = tonumber(val) end,
+					get = function(info) return tostring(Profile.Cage_Min_Level) end,
 					validate = "ValidateLevels",
 				},
 				Cage_Max_Level = {
 					order = 7,
 					name = L.OPTIONS_CAGE_MAX_LEVEL,
 					desc = OPTIONS_CAGE_MAX_LEVEL_TOOLTIP,
-					type = "select",
-					type = "range",
-					get = "Getter",
-					set = "Setter",
+					type = "input",
 					width = "double",
-					min = 1,
-					max = 25,
-					step = 1,
+					set = function(info,val) Profile.Cage_Max_Level = tonumber(val) end,
+					get = function(info) return tostring(Profile.Cage_Max_Level) end,
 					validate = "ValidateLevels",
 				},
 				Cage_Max_Quantity = {
 					order = 8,
 					name = L.OPTIONS_CAGE_MAX_QUANTITY,
 					desc = L.OPTIONS_CAGE_MAX_QUANTITY_TOOLTIP,
-					type = "select",
 					type = "range",
-					get = "Getter",
-					set = "Setter",
 					width = "double",
 					min = 1,
 					max = 3,
@@ -313,8 +296,6 @@ local options = {
 					name = L.OPTIONS_SKIP_CAGED ,
 					desc = nil,
 					type = "toggle",
-					get = "Getter",
-					set = "Setter",
 					width = "full"
 				},
 				Skip_Auction = {
@@ -322,8 +303,6 @@ local options = {
 					name = L.OPTIONS_SKIP_AUCTION ,
 					desc = nil,
 					type = "toggle",
-					get = "Getter",
-					set = "Setter",
 					disabled = "TSMDisable",
 					width = "full"
 				},
@@ -363,8 +342,6 @@ local options = {
 					name = L.OPTIONS_SHOW_TSM_CUSTOM,
 					desc = L.OPTIONS_SHOW_TSM_CUSTOM,
 					type = "toggle",
-					get = "Getter",
-					set = "Setter",
 					--width = "double",
 					disabled = "TSMDisable",
 				},
@@ -376,8 +353,6 @@ local options = {
 					type = "input",
 					--set = function(info,val) Profile.Cage_Custom_TSM_Price_Value = val end,
 					--get = function(info) return Profile.Cage_Custom_TSM_Price_Value end,
-					get = "Getter",
-					set = "Setter",
 					width = "full",
 					disabled = "TSMDisable",
 					validate = "ValidateTSMSource",
@@ -398,8 +373,6 @@ local options = {
 					name = L.OPTIONS_HANDLE_PETWHITELIST,
 					desc = nil,
 					type = "select",
-					get = "Getter",
-					set = "Setter",
 					width = "normal",
 					values = {["include"] = "Include after normal scan", ["only"] = "Only cage list", ["disable"] = "Do not use list"}
 				},
@@ -480,8 +453,6 @@ local options = {
 					name = L.OPTIONS_TSM_VALUE,
 					desc = L.OPTIONS_TSM_VALUE_TOOLTIP,
 					type = "toggle",
-					get = "Getter",
-					set = "Setter",
 					width = "double",
 					disabled = "TSMDisable",
 				},
@@ -490,8 +461,6 @@ local options = {
 					name = L.OPTIONS_TSM_DATASOURCE,
 					--desc = "TSM Source to get price data.",
 					type = "select",
-					get = "Getter",
-					set = "Setter",
 					width = "normal",
 					values = function() return BPCM:TSM_Source() end,
 					disabled = "TSMDisable",
@@ -501,8 +470,6 @@ local options = {
 					name = L.OPTIONS_TSM_USE_CUSTOM,
 					--desc = L.OPTIONS_TSM_FILTER_TOOLTIP,
 					type = "toggle",
-					get = "Getter",
-					set = "Setter",
 					width = "double",
 					disabled = "TSMDisable",
 				},
@@ -513,8 +480,6 @@ local options = {
 					type = "input",
 					--set = function(info,val) Profile.TSM_Custom = BPCM:TSM_CustomSource(val) end,
 					--get = function(info) return Profile.TSM_Custom end,
-					get = "Getter",
-					set = "Setter",
 					width = "full",
 					disabled = "TSMDisable",
 					validate = "ValidateTSMSource",
@@ -524,8 +489,6 @@ local options = {
 					name = L.OPTIONS_TSM_FILTER,
 					desc = L.OPTIONS_TSM_FILTER_TOOLTIP,
 					type = "toggle",
-					get = "Getter",
-					set = "Setter",
 					width = "normal",
 					disabled = "TSMDisable",
 				},
@@ -543,20 +506,14 @@ local options = {
 				TSM_Rank = {
 					order = 21,
 					name = L.OPTIONS_TSM_RANK,
-					type = "select",
 					type = "toggle",
-					get = "Getter",
-					set = "Setter",
 					width = "full",
 					disabled = "TSMDisable",
 				},
 				TSM_Rank_Medium = {
 					order = 22,
 					name = L.OPTIONS_TSM_RANK_MEDIUM,
-					type = "select",
 					type = "range",
-					get = "Getter",
-					set = "Setter",
 					width = "normal",
 					min = 1,
 					max = 10,
@@ -567,10 +524,7 @@ local options = {
 				TSM_Rank_High = {
 					order = 23,
 					name = L.OPTIONS_TSM_RANK_HIGH,
-					type = "select",
 					type = "range",
-					get = "Getter",
-					set = "Setter",
 					width = "normal",
 					min = 1,
 					max = 10,

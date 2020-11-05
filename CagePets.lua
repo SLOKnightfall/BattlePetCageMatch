@@ -68,45 +68,52 @@ function Cage:GeneratePetList()
 		local pGuid, pBattlePetID, _, pNickname, pLevel, pIsFav, _, pName, _, _, _, _, _, _, _, pIsTradeable = C_PetJournal.GetPetInfoByIndex(index)
 		local _, _, _, _, rarity = C_PetJournal.GetPetStats(pGuid)
 		local isSlotted = C_PetJournal.PetIsSlotted(pGuid)
+		local isHurt = C_PetJournal.PetIsHurt(pGuid)
+		local canBeTraded = C_PetJournal.PetIsTradable(pGuid)
 
-		if pBattlePetID then 
-			local numCollected = C_PetJournal.GetNumCollectedInfo(tonumber(pBattlePetID))
-			petCache[pName] = (pIsTradeable and pGuid) or nil
-			petCageCount[pBattlePetID] = petCageCount[pBattlePetID] or 1
-
-			if ((pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "only")) or (not pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "ignore")))
-			and pIsTradeable 
-			--and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level))
-			and numCollected >= Profile.Cage_Max_Quantity
-			and not isSlotted
-			and ((Profile.Skip_Caged and not BPCM.bagResults[pBattlePetID]) or (not Profile.Skip_Caged and true))
-			and ((Profile.Handle_PetBlackList and not BPCM.BlackListDB:FindIndex(pName)) or (not Profile.Handle_PetBlackList and true))
-			--and ((Profile.Handle_PetWhiteList == "only" and BPCM.WhiteListDB:FindIndex(pName)) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
-			and ((Profile.Handle_PetWhiteList == "only" and false) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
-			--and ((Profile.Cage_Once and not petCache[pBattlePetID] ) or (not Profile.Cage_Once  and true))
-			and TSMPricelookup(pBattlePetID) 
-			and TSMCustomPricelookup(pBattlePetID)
-			and TSMAuctionLookup(pBattlePetID) 
-			and (rarity and Profile.Cage_Quality[rarity]) then
-
-				--Checks to make sure that min max are valid.  tried to do when setting sliders but had issues due to 
-				if Profile.Cage_Min_Level > Profile.Cage_Max_Level then
-					Profile.Cage_Max_Level = Profile.Cage_Min_Level							
-				elseif Profile.Cage_Min_Level > Profile.Cage_Max_Level then 
-					Profile.Cage_Min_Level = Profile.Cage_Max_Level
-				end
-
-				if (tonumber(pLevel) >= tonumber(Profile.Cage_Min_Level)) and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level)) and (petCageCount[pBattlePetID] <= Profile.Cage_Ammount) then  --Breaks if included in previous if statement
-					--Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE)
-					table.insert(petsToCage, pGuid)
-					petCache[pBattlePetID] = true
-					petCageCount[pBattlePetID] = petCageCount[pBattlePetID] + 1
-				end
-			elseif isSlotted then
+		if pBattlePetID and pIsTradeable and canBeTraded then 
+			if isSlotted then 
 				Cage:Cage_Message(pName .. " :: " .. L.SLOTTED_PET_MESSAGE)
 
-			elseif 	 (Profile.Handle_PetBlackList and  BPCM.BlackListDB:FindIndex(pName)) then
+			elseif isHurt then
+				Cage:Cage_Message(pName .. " :: " .. L.HURT_PET_MESSAGE)
+
+			elseif (Profile.Handle_PetBlackList and  BPCM.BlackListDB:FindIndex(pName)) then
 				Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE_BLACKLIST)
+
+			else
+				local numCollected = C_PetJournal.GetNumCollectedInfo(tonumber(pBattlePetID))
+				petCache[pName] = (pIsTradeable and pGuid and canBeTraded) or nil
+				petCageCount[pBattlePetID] = petCageCount[pBattlePetID] or 1
+
+				if ((pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "only")) or (not pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "ignore")))
+				--and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level))
+				and numCollected >= Profile.Cage_Max_Quantity
+				--and not isSlotted
+				and ((Profile.Skip_Caged and not BPCM.bagResults[pBattlePetID]) or (not Profile.Skip_Caged and true))
+				and ((Profile.Handle_PetBlackList and not BPCM.BlackListDB:FindIndex(pName)) or (not Profile.Handle_PetBlackList and true))
+				--and ((Profile.Handle_PetWhiteList == "only" and BPCM.WhiteListDB:FindIndex(pName)) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
+				and ((Profile.Handle_PetWhiteList == "only" and false) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
+				--and ((Profile.Cage_Once and not petCache[pBattlePetID] ) or (not Profile.Cage_Once  and true))
+				and TSMPricelookup(pBattlePetID) 
+				and TSMCustomPricelookup(pBattlePetID)
+				and TSMAuctionLookup(pBattlePetID) 
+				and (rarity and Profile.Cage_Quality[rarity]) then
+
+					--Checks to make sure that min max are valid.  tried to do when setting sliders but had issues due to 
+					--if Profile.Cage_Min_Level > Profile.Cage_Max_Level then
+						--Profile.Cage_Max_Level = Profile.Cage_Min_Level							
+					--elseif Profile.Cage_Min_Level > Profile.Cage_Max_Level then 
+					--	Profile.Cage_Min_Level = Profile.Cage_Max_Level
+					--end
+
+					if (tonumber(pLevel) >= tonumber(Profile.Cage_Min_Level)) and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level)) and (petCageCount[pBattlePetID] <= Profile.Cage_Ammount) then  --Breaks if included in previous if statement
+						--Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE)
+						table.insert(petsToCage, pGuid)
+						petCache[pBattlePetID] = true
+						petCageCount[pBattlePetID] = petCageCount[pBattlePetID] + 1
+					end
+				end
 			end
 		end
 	end
@@ -177,6 +184,7 @@ function Cage:inventorySpaceCheck()
 			free = free + bagFree
 		end
 	end
+	
 	if free == 0 then 
 		return false
 	else
