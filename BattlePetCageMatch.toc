@@ -1,7 +1,7 @@
-﻿## Interface: ## Interface: 90001
+﻿## Interface: 90005
 ## Title: BattlePetCageMatch (@project-version@)
 ## Version: @project-version@
-## Game Version: 9.0.1
+## Game Version: 9.0.5
 ## Author: SLOKnightfall
 ## Notes: Helper for dealing with Battle Pet Cages
 ## OptionalDeps: TradeSkillMaster_AuctionDB, TradeSkillMaster, Rematch
@@ -20,6 +20,8 @@ Libs\AceEvent-3.0\AceEvent-3.0.xml
 Libs\AceHook-3.0\AceHook-3.0.xml
 Libs\AceLocale-3.0\AceLocale-3.0.xml
 Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibTextDump-1.0\LibTextDump-1.0.lua
+
 
 #Locale
 Locale\enUS.lua
@@ -29,3 +31,4 @@ Templates.xml
 BattlePetCageMatch.lua
 CagePets.lua
 List.lua
+Debug.lua
