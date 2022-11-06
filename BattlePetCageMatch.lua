@@ -887,30 +887,30 @@ local UpdateButton
  function BPCM:UpdatePetList_Icons()
  	if not PetJournal:IsVisible() or (Rematch and RematchPetPanel:IsVisible()) then return end
 
-	local scrollFrame = (Rematch and RematchPetPanel:IsVisible() and RematchPetPanel)
+	--[[local scrollFrame = (Rematch and RematchPetPanel:IsVisible() and RematchPetPanel)
 			or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and PetJournalEnhancedListScrollFrame)
 			or (PetJournalListScrollFrame)
+			]]--
+	local scrollFrame = PetJournal.ScrollBox
 
 	local roster = Rematch and Rematch.Roster
-
-	local offset = HybridScrollFrame_GetOffset(scrollFrame)
-	local buttons = scrollFrame.buttons
+	local offset = scrollFrame:GetDerivedScrollOffset()
+	local buttons = scrollFrame:GetScrollTarget()
 	local numPets = C_PetJournal.GetNumPets()
 	local showPets = true
 	
 	if  ( numPets < 1 ) then return end  --If there are no Pets then nothing needs to be done.
 
-	local numDisplayedPets =(Rematch and RematchPetPanel:IsVisible() and  #roster.petList)
+	local numDisplayedPets = (Rematch and RematchPetPanel:IsVisible() and  #roster.petList)
 		or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting and BPCM.Sorting:GetNumPets())
 		or C_PetJournal.GetNumPets()
 
-	for i=1, #buttons do
-		local button = buttons[i]
-		local displayIndex = i + offset
-		local button_name = button:GetName()
-		local pet_icon_frame = (Rematch and _G[button_name].Pet) or _G[button_name].dragButton
+		for index, button in PetJournal.ScrollBox:EnumerateFrames() do
+		local displayIndex = index --+ offset
+		--local button_name = button:GetName()
+		local pet_icon_frame = button.dragButton --(Rematch and _G[button_name].Pet) or button.dragButton
 		if ( displayIndex <= numDisplayedPets ) then
-
+--[[
 			local index = (Rematch and RematchPetPanel:IsVisible() and displayIndex)
 			or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting and BPCM.Sorting:GetPetByIndex(displayIndex)["index"])
 			or displayIndex
@@ -929,12 +929,16 @@ local UpdateButton
 			else
 				petID,speciesID,_,_,level,_,_,petName,_,_,_,_,_,_,_,tradeable =  C_PetJournal.GetPetInfoByIndex(index)
 			end
+]]--
+
+			local speciesID, level, petName, tradeable
+			petID,speciesID,_,_,level,_,_,petName,_,_,_,_,_,_,_,tradeable =  C_PetJournal.GetPetInfoByIndex(button.index)
 
 			if  button.BP_InfoFrame then
 			else
 				pet_icon_frame:SetScript("OnEnter", function (...) BPCM:BuildIconToolTip(pet_icon_frame); end)
 				pet_icon_frame:SetScript("OnLeave", function() GameTooltip:Hide(); end)
-				local frame = CreateFrame("Frame", "CageMatch"..i, button, "BPCM_ICON_TEMPLATE")
+				local frame = CreateFrame("Frame", "CageMatch"..index, button, "BPCM_ICON_TEMPLATE")
 				frame:ClearAllPoints()
 				frame:SetPoint("BOTTOMRIGHT", 0,0);
 				frame.no_trade:ClearAllPoints()
@@ -968,11 +972,8 @@ local UpdateButton
 
 			else
 				if Profile.No_Trade then
-					--button.BP_InfoFrame.icons.BP_Cage:SetTexture("Interface/Buttons/UI-GROUPLOOT-PASS-DOWN")
-					--button.BP_InfoFrame.icons.BP_Cage:Show()
 					button.BP_InfoFrame.no_trade:Show()
 				else
-					--button.BP_InfoFrame.icons.BP_Cage:Hide()
 					button.BP_InfoFrame.no_trade:Hide()
 				end
 
@@ -990,6 +991,8 @@ local UpdateButton
 			button.BP_InfoFrame.icons.BP_Global.display = false
 			button.BP_InfoFrame:Hide()
 		end
+
+	
 	end
 end
 
@@ -1094,11 +1097,11 @@ function BPCM:OnEnable()
 	--Hooking PetJournal functions
 	LoadAddOn("Blizzard_Collections")
 	hooksecurefunc("PetJournal_UpdatePetList", UpdateData)
-	hooksecurefunc(PetJournalListScrollFrame,"update", function(...)BPCM:UpdatePetList_Icons(); end)
+	hooksecurefunc(PetJournal.ScrollBox,"Update", function(...)BPCM:UpdatePetList_Icons(); end)
 	hooksecurefunc("BattlePetToolTip_Show", function(species, level, quality, health, power, speed, customName)
 		BPCM:BattlePetTooltip_Show(BattlePetTooltip, species)
 	end)
-
+----PetJournal.ScrollBox.ScrollTarget
 	--PetJournalEnhanced hooks
 	if IsAddOnLoaded("PetJournalEnhanced") then
 		hooksecurefunc(PetJournalEnhancedListScrollFrame,"update", function(...)BPCM:UpdatePetList_Icons(); end)

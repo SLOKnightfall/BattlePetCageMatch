@@ -4,6 +4,9 @@ BPCM.Cage = Cage
 BPCM.Learn_Click = false
 local Profile = {}
 
+local addonName, addon = ...
+addon = LibStub("AceAddon-3.0"):GetAddon(addonName)
+
 local L = LibStub("AceLocale-3.0"):GetLocale("BattlePetCageMatch")
 
 local petsToCage = {}
@@ -23,7 +26,11 @@ end
 
 
 local function TSMPricelookup(pBattlePetID)
-	if (not BPCM.TSM_LOADED) or (not Profile.Cage_Max_Price) then return true end
+	if (not BPCM.TSM_LOADED) or (not Profile.Cage_Max_Price) then 
+		--addon:Debug(("Not already caged: %s"):format(tostring(value)), 2)
+		return true 
+	end
+
 	local source = GetPriceSource()
 	if Profile.Cage_Max_Price_Value == ""  or not Profile.Cage_Max_Price_Value then Profile.Cage_Max_Price_Value = 0 end
 	return (BPCM.TSM:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= (Profile.Cage_Max_Price_Value *100*100)
@@ -52,13 +59,35 @@ function Cage:Cage_Message(msg)
 	--end
 end
 
+local function CheckFavorite()
+
+
+end
+
+local function CheckSkipCaged(pBattlePetID)
+	local value = (Profile.Skip_Caged and not BPCM.bagResults[pBattlePetID]) or (not Profile.Skip_Caged and true)
+	addon:Debug(("Not already caged: %s"):format(tostring(value)), 2)
+	return value
+end
+
+local function CheckBlackList(pName)
+	local value = (Profile.Handle_PetBlackList and not BPCM.BlackListDB:FindIndex(pName)) or (not Profile.Handle_PetBlackList and true)
+	addon:Debug(("Not on BlackList: %s"):format(tostring(value)), 2)
+	return value
+end
+
 
 --Cycles through pet journal and creates a table of pets that match caging rules
 function Cage:GeneratePetList()
 	C_PetJournal.ClearSearchFilter() -- Clear filter so we have a full pet list.
+	addon:Debug("Clearing Searc Filter", 1)
 	C_PetJournal.SetPetSortParameter(LE_SORT_BY_LEVEL) -- Sort by level, ensuring higher level pets are encountered first.
+	addon:Debug("Sorting By Level", 1)
 	Cage:Cage_Message(L.BUILDING_CAGE_LIST)
+	addon:Debug("Starting to generate cage list", 1)
+
 	local total, owned = C_PetJournal.GetNumPets()
+	addon:Debug(("Owned Pets: %s"):format(owned), 1)
 	local petCache = {}
 	petsToCage = {}
 	skipPetList = {}
@@ -72,14 +101,19 @@ function Cage:GeneratePetList()
 		local canBeTraded = C_PetJournal.PetIsTradable(pGuid)
 
 		if pBattlePetID and pIsTradeable and canBeTraded then 
+			addon:Debug(("Checking status: %s"):format(pName), 1)
+
 			if isSlotted then 
 				Cage:Cage_Message(pName .. " :: " .. L.SLOTTED_PET_MESSAGE)
+				addon:Debug(pName .. " :: " .. L.SLOTTED_PET_MESSAGE, 2)
 
 			elseif isHurt then
 				Cage:Cage_Message(pName .. " :: " .. L.HURT_PET_MESSAGE)
+				addon:Debug(pName .. " :: " .. L.HURT_PET_MESSAGE, 2)
 
 			elseif (Profile.Handle_PetBlackList and  BPCM.BlackListDB:FindIndex(pName)) then
 				Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE_BLACKLIST)
+				addon:Debug(pName .. " :: " .. L.CAGED_MESSAGE_BLACKLIST, 2)
 
 			else
 				local numCollected = C_PetJournal.GetNumCollectedInfo(tonumber(pBattlePetID))
@@ -90,8 +124,8 @@ function Cage:GeneratePetList()
 				--and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level))
 				and numCollected >= Profile.Cage_Max_Quantity
 				--and not isSlotted
-				and ((Profile.Skip_Caged and not BPCM.bagResults[pBattlePetID]) or (not Profile.Skip_Caged and true))
-				and ((Profile.Handle_PetBlackList and not BPCM.BlackListDB:FindIndex(pName)) or (not Profile.Handle_PetBlackList and true))
+				and CheckSkipCaged(pBattlePetID)
+				and CheckBlackList(pName)
 				--and ((Profile.Handle_PetWhiteList == "only" and BPCM.WhiteListDB:FindIndex(pName)) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
 				and ((Profile.Handle_PetWhiteList == "only" and false) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
 				--and ((Profile.Cage_Once and not petCache[pBattlePetID] ) or (not Profile.Cage_Once  and true))
@@ -107,7 +141,11 @@ function Cage:GeneratePetList()
 					--	Profile.Cage_Min_Level = Profile.Cage_Max_Level
 					--end
 
-					if (tonumber(pLevel) >= tonumber(Profile.Cage_Min_Level)) and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level)) and (petCageCount[pBattlePetID] <= Profile.Cage_Ammount) then  --Breaks if included in previous if statement
+					if (tonumber(pLevel) >= tonumber(Profile.Cage_Min_Level)) 
+						and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level)) 
+						and (petCageCount[pBattlePetID] <= Profile.Cage_Ammount) then  --Breaks if included in previous if statement
+						addon:Debug(("%s added to queue"):format(pName), 1)
+
 						--Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE)
 						table.insert(petsToCage, pGuid)
 						petCache[pBattlePetID] = true
@@ -128,6 +166,8 @@ function Cage:GeneratePetList()
 	end
 
 	Cage:Cage_Message(#petsToCage .. " Pets to Cage")
+	addon:Debug(#petsToCage .. " Pets to Cage",1)
+
 	if #petsToCage > 0  then 
 		BPCM.eventFrame.petIndex = 1
 		if Profile.Cage_Window then 
@@ -146,6 +186,8 @@ function Cage:StartCageing(index)
 	if not Cage:inventorySpaceCheck() then
 		BPCM.eventFrame.pendingUpdate = false
 		Cage:Cage_Message(L.FULL_INVENTORY)
+		addon:Debug(L.FULL_INVENTORY ,1)
+
 		return false
 	end
 

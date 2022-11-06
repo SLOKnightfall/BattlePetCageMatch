@@ -4,8 +4,7 @@
 	<Frame name="BPCM_ICON_TEMPLATE" id="" virtual="true" >
 		<Size x="20" y="60"/>
 		<Layers>
-		<Layer level="BACKGROUND" setAllPoints = "true">
-		<Color r="1.0" g="0.1" b="0.1" />
+		<Layer level="BACKGROUND" >
 		</Layer>
 		</Layers>
 		<Frames>
