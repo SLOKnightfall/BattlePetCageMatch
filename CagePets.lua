@@ -329,13 +329,14 @@ function Cage:OnEnable()
 	
 	if IsAddOnLoaded("Rematch") then
 		BPCM.RematchCageButton = Cage:CreateButton("Rematch")
-		BPCM.RematchCageButton:SetParent("RematchToolbar")
+		BPCM.RematchCageButton:SetParent(RematchToolbar)
 		BPCM.RematchCageButton:ClearAllPoints()
 		BPCM.RematchCageButton:SetPoint("LEFT", RematchToolbar.PetCount, "RIGHT", 5, 0)
 		BPCM.RematchCageButton:SetWidth(32)
 		BPCM.RematchCageButton:SetHeight(32)
-		BPCM.RematchCageButton:SetShown(Profile.Show_Cage_Button and not RematchSettings.Minimized)
+		BPCM.RematchCageButton:SetShown(true) --Profile.Show_Cage_Button and not RematchSettings.Minimized)
 	end
+
 end
 
 
