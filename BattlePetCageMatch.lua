@@ -610,8 +610,7 @@ function BPCM:BPScanBags()
 	wipe(BPCM.bagResults)
 	BPCM.bagResults = {}
 	for t=0,4 do
-
-		local slots = GetContainerNumSlots(t);
+		local slots = C_Container.GetContainerNumSlots(t);
 		if (slots > 0) then
 			for c=1,slots do
 				local _,_,_,_,_,_,itemLink,_,_,itemID = GetContainerItemInfo(t,c)
