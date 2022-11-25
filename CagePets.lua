@@ -221,7 +221,7 @@ end
 function Cage:inventorySpaceCheck()
 	local free=0
 	for bag = 0,NUM_BAG_SLOTS do
-		local bagFree, bagFam = GetContainerNumFreeSlots(bag)
+		local bagFree, bagFam = C_Container.GetContainerNumFreeSlots(bag)
 		if bagFam == 0 then
 			free = free + bagFree
 		end
@@ -450,10 +450,10 @@ end
 function BPCM.Create_Learn_Queue()
 	wipe(learn_queue)
 	for t=0,4 do 
-		local slots = GetContainerNumSlots(t)
+		local slots = C_Container.GetContainerNumSlots(t)
 		if (slots > 0) then
 			for c=1,slots do
-				local _,_,_,_,_,_,itemLink,_,_,itemID = GetContainerItemInfo(t,c)
+				local _,_,_,_,_,_,itemLink,_,_,itemID = C_Container.GetContainerItemInfo(t,c)
 				if (itemID == 82800) then
 					local _, _, _, _, speciesId,_ , _, _, _, _, _, _, _, _, cageName = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")
 					local speciesID = tonumber(speciesId)
