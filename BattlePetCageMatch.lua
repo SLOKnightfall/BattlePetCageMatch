@@ -613,20 +613,24 @@ function BPCM:BPScanBags()
 		local slots = C_Container.GetContainerNumSlots(t);
 		if (slots > 0) then
 			for c=1,slots do
-				local _,_,_,_,_,_,itemLink,_,_,itemID = GetContainerItemInfo(t,c)
+				local itemInfos = C_Container.GetContainerItemInfo(t,c);
+				if itemInfos ~= nil then
+					-- _,_,_,_,_,_,itemLink,_,_,itemID = C_Container.GetContainerItemInfo(t,c)
+					itemLink = itemInfos.hyperlink;
+					itemID = itemInfos.itemID;
+					if (itemID == 82800) then
+						local _, _, _, _, speciesID,_ , _, _, _, _, _, _, _, _, cageName = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")
+						--local recipeName = select(4, strsplit("|", link))
+						--printable = gsub(itemLink, "\124", "\124\124");
 
-				if (itemID == 82800) then
-				local _, _, _, _, speciesID,_ , _, _, _, _, _, _, _, _, cageName = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")
-				--local recipeName = select(4, strsplit("|", link))
-				--printable = gsub(itemLink, "\124", "\124\124");
+						speciesID = tonumber(speciesID)
+						BPCM.bagResults [speciesID]= BPCM.bagResults [speciesID] or {}
+						BPCM.bagResults [speciesID]["count"] = (BPCM.bagResults [speciesID]["count"] or 0) + 1
+						BPCM.bagResults [speciesID]["data"] = BPCM.bagResults [speciesID]["data"] or {}
+						tinsert(BPCM.bagResults [speciesID]["data"],itemLink )
 
-				speciesID = tonumber(speciesID)
-				BPCM.bagResults [speciesID]= BPCM.bagResults [speciesID] or {}
-				BPCM.bagResults [speciesID]["count"] = (BPCM.bagResults [speciesID]["count"] or 0) + 1
-				BPCM.bagResults [speciesID]["data"] = BPCM.bagResults [speciesID]["data"] or {}
-				tinsert(BPCM.bagResults [speciesID]["data"],itemLink )
-
-				playerInv_DB[speciesID] = BPCM.bagResults [speciesID]
+						playerInv_DB[speciesID] = BPCM.bagResults [speciesID]
+					end
 				end
 			end
 		end
