@@ -283,7 +283,7 @@ end);
 eventFrame:SetAttribute("type1", "macro") -- left click causes macro		
 --eventFrame:SetAttribute("macrotext1","/run BPCM.Create_Learn_Queue();\n/run BPCM.Learn_Click = true;") -- text for macro on left click
 eventFrame:SetAttribute("macrotext1","/use pet cage;\n/run BPCM.Learn_Click = true;") -- text for macro on left click
-
+eventFrame:RegisterForClicks("LeftButtonDown")
 
 --Virtual Button to attach the Learn Keybinding to
 --local learnbutton = CreateFrame("Button", "BPCM_LearnButton", UIParent, "SecureActionButtonTemplate")
@@ -449,12 +449,14 @@ end
 --Scans bags and creats a list the bag & slot positison for any found cages
 function BPCM.Create_Learn_Queue()
 	wipe(learn_queue)
-	for t=0,4 do 
+	for t = 0 , 4 do 
 		local slots = C_Container.GetContainerNumSlots(t)
 		if (slots > 0) then
-			for c=1,slots do
-				local _,_,_,_,_,_,itemLink,_,_,itemID = C_Container.GetContainerItemInfo(t,c)
-				if (itemID == 82800) then
+			for c = 1,slots do
+				local itemData = C_Container.GetContainerItemInfo(t,c)
+				
+				if (itemData and itemData.itemID == 82800) then
+					local itemLink = itemData.hyperlink
 					local _, _, _, _, speciesId,_ , _, _, _, _, _, _, _, _, cageName = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?")
 					local speciesID = tonumber(speciesId)
 					local numCollected, limit = C_PetJournal.GetNumCollectedInfo(speciesId)

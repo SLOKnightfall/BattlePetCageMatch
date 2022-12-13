@@ -6,4 +6,5 @@
     C_PetJournal.CagePetByID(GetMouseFocus().petID);
  </Binding>
  <Binding name="CLICK BPCM_LearnButton:LeftButton" category="ADDONS"/>
+    BPCM_LearnButton:Click();
 </Bindings>
