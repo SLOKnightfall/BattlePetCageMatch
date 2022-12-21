@@ -606,7 +606,6 @@ end
 
 ---Scans the players bags and logs any caged battle pets
 function BPCM:BPScanBags()
-	print("scan")
 	wipe(playerInv_DB)
 	wipe(BPCM.bagResults)
 	BPCM.bagResults = {}
