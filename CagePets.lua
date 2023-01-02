@@ -79,19 +79,28 @@ end
 
 --Cycles through pet journal and creates a table of pets that match caging rules
 function Cage:GeneratePetList()
-	C_PetJournal.ClearSearchFilter() -- Clear filter so we have a full pet list.
+	--C_PetJournal.ClearSearchFilter() -- Clear filter so we have a full pet list.
+	PetJournalFilterDropDown_ResetFilters()
 	addon:Debug("Clearing Searc Filter", 1)
+	PetJournalFilterDropDown_SetCollectedFilter(true)
+	PetJournalFilterDropDown_SetNotCollectedFilter(false)
+
 	C_PetJournal.SetPetSortParameter(LE_SORT_BY_LEVEL) -- Sort by level, ensuring higher level pets are encountered first.
 	addon:Debug("Sorting By Level", 1)
-	Cage:Cage_Message(L.BUILDING_CAGE_LIST)
+	
+	local total, owned = C_PetJournal.GetNumPets()
+
+	Cage:Cage_Message(format(L.BUILDING_CAGE_LIST, total))
 	addon:Debug("Starting to generate cage list", 1)
 
-	local total, owned = C_PetJournal.GetNumPets()
 	addon:Debug(("Owned Pets: %s"):format(owned), 1)
 	local petCache = {}
 	petsToCage = {}
 	skipPetList = {}
 	local petCageCount = {}
+
+	if total == 0 then Cage:Cage_Message("No pets found due to filters") return end
+
 
 	for index = 1, owned do -- Loop every pet owned (unowned will be over the offset).
 		local pGuid, pBattlePetID, _, pNickname, pLevel, pIsFav, _, pName, _, _, _, _, _, _, _, pIsTradeable = C_PetJournal.GetPetInfoByIndex(index)
@@ -156,7 +165,7 @@ function Cage:GeneratePetList()
 		end
 	end
 
-	if (Profile.Handle_PetWhiteList == "include" or Profile.Handle_PetWhiteList == "only" )then 
+	if (Profile.Handle_PetWhiteList == "include" or Profile.Handle_PetWhiteList == "only") then 
 		for pName, pGuid in pairs(petCache) do
 			if type(pName)== "string" and BPCM.WhiteListDB:FindIndex(pName) then
 				Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE_WHITELIST)

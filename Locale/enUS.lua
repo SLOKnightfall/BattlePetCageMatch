@@ -83,7 +83,7 @@ L.CONTINUE_CAGING_DIALOG_TEXT = "Continue Caging Old List?"
 L.CONTINUE_CAGING_DIALOG_YES = "Yes"
 L.CONTINUE_CAGING_DIALOG_NO = "No"
 
-L.BUILDING_CAGE_LIST = "Building Cage List"
+L.BUILDING_CAGE_LIST = "Building Cage List from %s pets"
 
 L.AUTO_CAGE_TOOLTIP_1 = "Cage Pets"
 L.AUTO_CAGE_TOOLTIP_2 = "Click:  Cage Pets based on rules"
