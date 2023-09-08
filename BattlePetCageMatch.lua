@@ -9,7 +9,6 @@
 
 local BPCM = select(2, ...)
 BPCM.TSM = {}
-local TSM_Version = 4
 local addonName, addon = ...
 _G["BPCM"] = BPCM
 BPCM = LibStub("AceAddon-3.0"):NewAddon(addon,"BattlePetCageMatch", "AceEvent-3.0", "AceConsole-3.0", "AceHook-3.0")
@@ -840,7 +839,7 @@ end
 
 local function SetCageIcon(button, speciesID)
 	button.BP_Cage:Hide()
-	button.petlink = "p:"..speciesID..":1:2"
+	button.petlink = "p:"..speciesID..":1:3"
 	button.speciesID = speciesID
 
 	if BPCM.bagResults [speciesID] then
@@ -856,7 +855,7 @@ end
 
 local function SetTSMValue(button, speciesID)
 	if BPCM.TSM_LOADED and Profile.TSM_Value then
-		button.BP_Value.petlink = "p:"..speciesID..":1:2"
+		button.BP_Value.petlink = "p:"..speciesID..":1:3"
 		local pass, rank = BPCM:pricelookup(button.BP_Value.petlink)
 
 		if Profile.TSM_Filter and not pass then
@@ -947,7 +946,7 @@ local UpdateButton
 			end
 
 			button.BP_InfoFrame.speciesID = speciesID
-			button.BP_InfoFrame.petlink = "p:"..speciesID..":1:2"
+			button.BP_InfoFrame.petlink = "p:"..speciesID..":1:3"
 
 
 			if tradeable then
@@ -1076,14 +1075,6 @@ function BPCM:OnInitialize()
 	BPCM.WhiteListDB = BPCM.PetWhitelist:new()
 end
 
-local function TSMVersionCheck()
-	if TSM_API then 
-		TSM_Version = 4
-	else
-		TSM_Version = 3
-	end
-end
-
 function BPCM:OnEnable()
 	BPCM:RegisterEvent("AUCTION_HOUSE_CLOSED", UpdateData)
 	BPCM:RegisterEvent("BANKFRAME_CLOSED", UpdateData)
@@ -1118,7 +1109,6 @@ function BPCM:OnEnable()
 	BPCM.TSM_LOADED =  IsAddOnLoaded("TradeSkillMaster") --and IsAddOnLoaded("TradeSkillMaster_AuctionDB")
 	BPCM.PJE_LOADED =  IsAddOnLoaded("PetJournalEnhanced")
 	BPCM.REMATCH_LOADED =  IsAddOnLoaded("Rematch")
-	TSMVersionCheck()
 end
 
 -- Binding Variables
@@ -1170,7 +1160,7 @@ function BPCM:UpdateRematch(button, petID)
 	end
 
 	button.BP_InfoFrame.speciesID = speciesID
-	button.BP_InfoFrame.petlink = "p:"..speciesID..":1:2"
+	button.BP_InfoFrame.petlink = "p:"..speciesID..":1:3"
 
 
 	if tradeable then
@@ -1209,50 +1199,30 @@ function BPCM:UpdateRematch(button, petID)
 end
 
 
---Support for TSM3 and updated API for TSM4
+--Support for TSM4
 function BPCM.TSM:GetCustomPriceValue(source, itemID)
-	if TSM_Version == 3 then 
-		return TSMAPI:GetCustomPriceValue(source, itemID)
-	else
-		return TSM_API.GetCustomPriceValue(source, itemID)
-	end
+	return TSM_API.GetCustomPriceValue(source, itemID)
 end
 
 function BPCM.TSM:MoneyToString(priceMarket)
-	if TSM_Version == 3 then 
-		return TSMAPI:MoneyToString(priceMarket)
-	else
-		return TSM_API.FormatMoneyString(priceMarket)
-	end
+	return TSM_API.FormatMoneyString(priceMarket)
 end
 
 
 function BPCM.TSM:GetAuctionQuantity(pBattlePetID)
-	if TSM_Version == 3 then 
-		return TSMAPI.Inventory:GetAuctionQuantity(pBattlePetID)
-	else
-		return TSM_API.GetAuctionQuantity(pBattlePetID)
-	end
+	return TSM_API.GetAuctionQuantity(pBattlePetID)
 end
 
 
 function BPCM.TSM:ValidateCustomPrice(price)
-	if TSM_Version == 3 then 
-		return TSMAPI:ValidateCustomPrice(price)
-	else
-		return TSM_API.IsCustomPriceValid(price)
-	end
+	return TSM_API.IsCustomPriceValid(price)
 end
 
 
 BPCM.PriceSources = {}
 function BPCM.TSM:GetPriceSources()
-	if TSM_Version == 3 then 
-		return TSMAPI:GetPriceSources()
-	else
-		local table = {}
-		wipe(BPCM.PriceSources)
-		 TSM_API.GetPriceSourceKeys(BPCM.PriceSources)
-		return BPCM.PriceSources
-	end
+	local table = {}
+	wipe(BPCM.PriceSources)
+	TSM_API.GetPriceSourceKeys(BPCM.PriceSources)
+	return BPCM.PriceSources
 end

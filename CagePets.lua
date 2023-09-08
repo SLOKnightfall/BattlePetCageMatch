@@ -535,23 +535,27 @@ function BPCM:GenerateListView()
 
 	for i=BPCM.eventFrame.petIndex, #petsToCage do
 		local petID = petsToCage[i]
-		local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, tradable, unique, obtainable = C_PetJournal.GetPetInfoByPetID(petID)
-		if not skipPetList[petID] then 
 
-			local CheckBox = AceGUI:Create("CheckBox")
-			local priceText = ""
-			local cageText = ""
-			if BPCM.TSM_LOADED and speciesID and (Profile.Cage_Max_Price or Profile.Cage_Custom_TSM_Price) then 
-				priceText =  L.LIST_DISPLAY_TEXT_PRICE:format(BPCM.TSM:MoneyToString(BPCM.TSM:GetCustomPriceValue(source, "p:"..speciesID..":1:2") or 0 ))
-				cageText = ((Profile.Cage_Custom_TSM_Price and Profile.Cage_Show_Custom_TSM_Price) and L.CAGE_RULES_PRICE_TO_CAGE:format(BPCM.TSM:MoneyToString(BPCM.TSM:GetCustomPriceValue(Profile.Cage_Custom_TSM_Price_Value, "p:"..speciesID..":1:2") or 0 ))) or ""
+		--ToDo: Why is a Bool being returned
+		if type(petID) == "string" then 
+			local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, tradable, unique, obtainable = C_PetJournal.GetPetInfoByPetID(petID)
+			if not skipPetList[petID] then 
+
+				local CheckBox = AceGUI:Create("CheckBox")
+				local priceText = ""
+				local cageText = ""
+				if BPCM.TSM_LOADED and speciesID and (Profile.Cage_Max_Price or Profile.Cage_Custom_TSM_Price) then 
+					priceText =  L.LIST_DISPLAY_TEXT_PRICE:format(BPCM.TSM:MoneyToString(BPCM.TSM:GetCustomPriceValue(source, "p:"..speciesID..":1:3") or 0 ))
+					cageText = ((Profile.Cage_Custom_TSM_Price and Profile.Cage_Show_Custom_TSM_Price) and L.CAGE_RULES_PRICE_TO_CAGE:format(BPCM.TSM:MoneyToString(BPCM.TSM:GetCustomPriceValue(Profile.Cage_Custom_TSM_Price_Value, "p:"..speciesID..":1:2") or 0 ))) or ""
+				end
+
+				CheckBox:SetLabel(L.LIST_DISPLAY_TEXT:format(C_PetJournal.GetBattlePetLink(petID), level, priceText, cageText ))
+				CheckBox:SetValue(true)
+				CheckBox:SetImage(icon)
+				CheckBox:SetFullWidth(true)
+				CheckBox:SetCallback("OnValueChanged", function(self, info, value) skipPetList[petID] = not value end)
+				scroll:AddChild(CheckBox)
 			end
-
-			CheckBox:SetLabel(L.LIST_DISPLAY_TEXT:format(C_PetJournal.GetBattlePetLink(petID), level, priceText, cageText ))
-			CheckBox:SetValue(true)
-			CheckBox:SetImage(icon)
-			CheckBox:SetFullWidth(true)
-			CheckBox:SetCallback("OnValueChanged", function(self, info, value) skipPetList[petID] = not value end)
-			scroll:AddChild(CheckBox)
 		end
 	end
 end

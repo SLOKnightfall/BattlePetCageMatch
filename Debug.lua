@@ -19,7 +19,7 @@ local TextDump = LibStub("LibTextDump-1.0")
 --function SetDebug(value)
 --debugPriority = value
 --end
-debugPriority = 0
+debugPriority = 50
 -- ----------------------------------------------------------------------------
 -- Debugger.
 -- ----------------------------------------------------------------------------
