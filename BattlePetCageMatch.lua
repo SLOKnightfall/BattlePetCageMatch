@@ -304,6 +304,14 @@ local options = {
 					disabled = "TSMDisable",
 					width = "full"
 				},
+				Skip_Auction_Matching = {
+					order = 9.5,
+					name = L.OPTIONS_SKIP_AUCTION_MATCHING ,
+					desc = nil,
+					type = "toggle",
+					disabled = function() return not Profile.Skip_Auction end,
+					width = "full"
+				},
 				Cage_Max_Price = {
 					order = 10,
 					name = L.OPTIONS_CAGE_MAX_PRICE,
@@ -577,6 +585,7 @@ local defaults = {
 		Cage_Confirm = false,
 		Cage_Quality = {true, true, true, true},
 		Cage_Show_Custom_TSM_Price = false,
+		Skip_Auction_Matching = false,
 	}
 }
 
@@ -662,27 +671,28 @@ end
 ---Builds tooltip data
 --Pram: frame - Name of frame to attach tooltip to
 function BPCM:BuildToolTip(frame)
-	local tooltip_DB = nil
-	local tooltip_Value = nil
-	local tooltip_Cage = nil
 	local tooltip = nil
 
 	local speciesID = (frame:GetParent()):GetParent().speciesID
 	GameTooltip:SetOwner(frame, "ANCHOR_LEFT");
 
 	if frame.display then
-		tooltip_DB = BPCM:SearchList(speciesID, true)
+		tooltip = BPCM:SearchList(speciesID, true)
 	end
 
 	if BPCM.TSM_LOADED and (frame.petlink) then
-		tooltip_Value = BPCM:pricelookup(frame.petlink) or "N/A"  
+		tooltip = BPCM:pricelookup(frame.petlink) or "N/A"  
 	end
 
 	if frame.cage then
-		tooltip_Cage= "Inventory: "..(BPCM.bagResults[tonumber(speciesID)].count)
+		tooltip= "Inventory: "..(BPCM.bagResults[tonumber(speciesID)].count)
 	end
 
-	GameTooltip:SetText((tooltip_Value or tooltip_Cage or tooltip_DB or ""), nil, nil, nil, nil, true)
+	if frame.AH_Count then
+		tooltip = "Player Auctions: "..frame.AH_Count
+	end
+
+	GameTooltip:SetText((tooltip or ""), nil, nil, nil, nil, true)
 	GameTooltip:Show()	
 end
 
@@ -695,6 +705,7 @@ function BPCM:BuildIconToolTip(frame)
 	local tooltip_Value = nil
 	local tooltip_Cage = nil
 	local tooltip = nil
+	local tooltip_Auction
 	
 	local petlink = frame:GetParent().petlink 
 	if Profile.Icon_Tooltips["db"]then
@@ -705,6 +716,9 @@ function BPCM:BuildIconToolTip(frame)
 		tooltip_Value = BPCM:pricelookup(petlink) 
 	end
 
+	if BPCM.TSM_LOADED and Profile.Icon_Tooltips["value"] and (petlink) then
+		tooltip_Value = BPCM:pricelookup(petlink) 
+	end
 	if Profile.Icon_Tooltips["cage"]  and frame:GetParent().speciesID then
 
 		local inv = BPCM.bagResults[tonumber(frame:GetParent().speciesID)] or 0
@@ -770,6 +784,13 @@ function BPCM:pricelookup(itemID)
 	return tooltip, rank
 end
 
+function BPCM:TSMAuctionLookup(pBattlePetID)
+	if (not BPCM.TSM_LOADED) or (not Profile.Skip_Auction) then return 0 end
+	local link = C_PetJournal.GetBattlePetLink(pBattlePetID)
+	local TSM_String = TSM_API.ToItemString(link)
+	return BPCM.TSM:GetAuctionQuantity(TSM_String)
+end
+
 local l
 ---Initilizes of data sources from TSM for the options dropdown
 --Return:  sources - table of data sources available
@@ -832,13 +853,27 @@ function BPCM:PositionIcons(button)
 			button.BP_Cage:ClearAllPoints()
 			button.BP_Cage:SetPoint(Anchor,offset,offset)
 		end
+
+	end
+
+	if button.BP_Auction.display then
+		button.BP_Auction:ClearAllPoints()
+		if button.BP_Cage:IsShown() then 
+			button.BP_Auction:SetPoint("TOPRIGHT", button.BP_Cage, "TOPLEFT")
+		elseif button.BP_Value:IsShown() then
+			button.BP_Auction:SetPoint("TOPRIGHT", button.BP_Value, "TOPLEFT")
+		elseif button.BP_Global:IsShown() then
+			button.BP_Auction:SetPoint("TOPRIGHT", button.BP_Global, "TOPLEFT")
+		else
+			button.BP_Auction:SetPoint(Anchor,offset,offset)
+		end
 	end
 end
 
 
 local function SetCageIcon(button, speciesID)
 	button.BP_Cage:Hide()
-	button.petlink = "p:"..speciesID..":1:3"
+	--button.petlink = "p:"..speciesID..":1:3"
 	button.speciesID = speciesID
 
 	if BPCM.bagResults [speciesID] then
@@ -853,8 +888,10 @@ end
 
 
 local function SetTSMValue(button, speciesID)
+	z= (button:GetParent()):GetParent()
 	if BPCM.TSM_LOADED and Profile.TSM_Value then
-		button.BP_Value.petlink = "p:"..speciesID..":1:3"
+		--button.BP_Value.petlink = "p:"..speciesID..":1:3"
+		button.BP_Value.petlink = (button:GetParent()):GetParent().BP_InfoFrame.petlink
 		local pass, rank = BPCM:pricelookup(button.BP_Value.petlink)
 
 		if Profile.TSM_Filter and not pass then
@@ -879,6 +916,23 @@ local function SetTSMValue(button, speciesID)
 		button.BP_Value.display = false
 	end
 end
+
+function BPCM:GetItemString(item)
+	if not item then return "" end
+	local result = strmatch(item, "^\124cff[0-9a-z]+\124[Hh](.+)\124h%[.+%]\124h\124r$")
+	result = strjoin(":", strmatch(result, "^battle(p)et:(%d+:%d+:%d+)"))
+
+	if result then
+		local num = 1
+		while num > 0 do
+			result, num = gsub(result, ":0?$", "")
+		end
+
+		return strmatch(result, "^(p:%d+:%d+:%d+)$") or strmatch(result, "^(p:%d+:i%d+)$") or strmatch(result, "^(p:%d+)")
+	end
+	
+end
+
 
 local UpdateButton
 ---Updates the icons on Pet Journal to tag caged pets
@@ -944,8 +998,10 @@ local UpdateButton
 				button.BP_InfoFrame  = frame
 			end
 
+			local link = C_PetJournal.GetBattlePetLink(petID)
 			button.BP_InfoFrame.speciesID = speciesID
-			button.BP_InfoFrame.petlink = "p:"..speciesID..":1:3"
+			button.BP_InfoFrame.petlink = BPCM:GetItemString(link) -- "p:"..speciesID..":1:3"
+			button.BP_InfoFrame.petID = petID
 
 
 			if tradeable then
@@ -968,11 +1024,26 @@ local UpdateButton
 					button.BP_InfoFrame.icons.BP_Global.display = false
 				end
 
+				--Set Auction House info
+					button.BP_InfoFrame.icons.BP_Auction:Show()
+					local AH_Count = BPCM:TSMAuctionLookup(petID)
+				if AH_Count > 0 then 
+					button.BP_InfoFrame.icons.BP_Auction:Show()
+					button.BP_InfoFrame.icons.BP_Auction.display = true
+					button.BP_InfoFrame.icons.BP_Auction.AH_Count = AH_Count
+					--print(speciesID)
+				else
+					button.BP_InfoFrame.icons.BP_Auction:Hide()
+					button.BP_InfoFrame.icons.BP_Auction.display = false
+					button.BP_InfoFrame.icons.BP_Auction.AH_Count = nil
+				end
+
 			else
 				if Profile.No_Trade then
 					button.BP_InfoFrame.no_trade:Show()
 				else
 					button.BP_InfoFrame.no_trade:Hide()
+
 				end
 
 				
@@ -981,12 +1052,19 @@ local UpdateButton
 			BPCM:PositionIcons(button.BP_InfoFrame.icons)
 			--button.BPCM:Show()
 
+
+
+
 		else
 			button.BP_InfoFrame.icons.BP_Cage:Hide()
 			button.BP_InfoFrame.icons.BP_Value:Hide()
 			button.BP_InfoFrame.icons.BP_Global:Hide()
+			button.BP_InfoFrame.icons.BP_Auction:Hide()
+
 			button.BP_InfoFrame.icons.BP_Value.display = false
 			button.BP_InfoFrame.icons.BP_Global.display = false
+			button.BP_InfoFrame.icons.BP_Auction.display = false
+
 			button.BP_InfoFrame:Hide()
 		end
 
@@ -1158,8 +1236,10 @@ function BPCM:UpdateRematch(button, petID)
 		button.BP_InfoFrame  = frame
 	end
 
+	local link = C_PetJournal.GetBattlePetLink(petID)
 	button.BP_InfoFrame.speciesID = speciesID
-	button.BP_InfoFrame.petlink = "p:"..speciesID..":1:3"
+	button.BP_InfoFrame.petlink = BPCM:GetItemString(link) -- "p:"..speciesID..":1:3"
+	button.BP_InfoFrame.petID = petID
 
 
 	if tradeable then

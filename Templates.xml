@@ -116,6 +116,33 @@
 						</OnLeave>
 					</Scripts>
 				</Frame>
+				<Frame	name="$parentAuction" parentKey="BP_Auction" inherits="UICheckButtonTemplate">
+					<Size x="20" y="20"/>
+					<Anchors>
+					<Anchor	point="TOPRIGHT" relativeTo="$parentCage"	relativePoint="TOPLEFT" x="0" y="0"/>
+					</Anchors>
+					<Layers>
+						<Layer>
+							<Texture name="$parentIcon"	parentKey="icon" file="Interface/ICONS/Ability_Racial_PackHobgoblin">
+								<Size x="20" y="20"/>
+								<Anchors>
+									<Anchor	point="CENTER" relativePoint="CENTER" x="0" y="0"/>
+								</Anchors>
+							</Texture>
+						</Layer>
+					</Layers>
+					<Scripts>
+						<OnLoad>
+						</OnLoad>
+						<OnEnter>
+							--self:ShowTooltip()
+							BPCM:BuildToolTip(self)
+						</OnEnter>
+						<OnLeave>
+							GameTooltip:Hide()
+						</OnLeave>
+					</Scripts>
+				</Frame>
 				</Frames>
 			</Frame>
 

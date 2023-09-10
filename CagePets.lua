@@ -33,7 +33,7 @@ local function TSMPricelookup(pBattlePetID)
 
 	local source = GetPriceSource()
 	if Profile.Cage_Max_Price_Value == ""  or not Profile.Cage_Max_Price_Value then Profile.Cage_Max_Price_Value = 0 end
-	return (BPCM.TSM:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= (Profile.Cage_Max_Price_Value *100*100)
+	return (BPCM.TSM:GetCustomPriceValue(source, "p:"..pBattlePetID) or 0) >= (Profile.Cage_Max_Price_Value *100*100)
 end
 
 
@@ -41,15 +41,22 @@ local function TSMCustomPricelookup(pBattlePetID)
 	if (not BPCM.TSM_LOADED) or (not Profile.Cage_Custom_TSM_Price) then return true end
 	if Profile.Cage_Custom_TSM_Price_Value == "" or not Profile.Cage_Custom_TSM_Price_Value then print("No TSM Price Source Entered") return true end
 	local source = GetPriceSource()
-	local custom_value = (BPCM.TSM:GetCustomPriceValue(Profile.Cage_Custom_TSM_Price_Value, "p:"..pBattlePetID..":1:2") or 0)
-	return (BPCM.TSM:GetCustomPriceValue(source, "p:"..pBattlePetID..":1:2") or 0) >= custom_value
+	local custom_value = (BPCM.TSM:GetCustomPriceValue(Profile.Cage_Custom_TSM_Price_Value, "p:"..pBattlePetID) or 0)
+	return (BPCM.TSM:GetCustomPriceValue(source, "p:"..pBattlePetID) or 0) >= custom_value
 end
 
 
-local function TSMAuctionLookup(pBattlePetID)
+local function TSMAuctionLookup(pGuid, pBattlePetID)
 	if (not BPCM.TSM_LOADED) or (not Profile.Skip_Auction) then return true end
-	return BPCM.TSM:GetAuctionQuantity("p:"..pBattlePetID..":1:2") == 0 
 
+	if Profile.Skip_Auction and Profile.Skip_Auction_Matching then
+		local link = C_PetJournal.GetBattlePetLink(pGuid)
+		local TSM_String = TSM_API.ToItemString(link)
+		return BPCM.TSM:GetAuctionQuantity(TSM_String) == 0 
+	else 
+		local link = C_PetJournal.GetBattlePetLink(pGuid)
+		return BPCM.TSM:GetAuctionQuantity("p:".. pBattlePetID) == 0 
+	end
 end
 
 
@@ -104,61 +111,63 @@ function Cage:GeneratePetList()
 
 	for index = 1, owned do -- Loop every pet owned (unowned will be over the offset).
 		local pGuid, pBattlePetID, _, pNickname, pLevel, pIsFav, _, pName, _, _, _, _, _, _, _, pIsTradeable = C_PetJournal.GetPetInfoByIndex(index)
-		local _, _, _, _, rarity = C_PetJournal.GetPetStats(pGuid)
-		local isSlotted = C_PetJournal.PetIsSlotted(pGuid)
-		local isHurt = C_PetJournal.PetIsHurt(pGuid)
-		local canBeTraded = C_PetJournal.PetIsTradable(pGuid)
+		if pGuid then
+			local _, _, _, _, rarity = C_PetJournal.GetPetStats(pGuid)
+			local isSlotted = C_PetJournal.PetIsSlotted(pGuid)
+			local isHurt = C_PetJournal.PetIsHurt(pGuid)
+			local canBeTraded = C_PetJournal.PetIsTradable(pGuid)
 
-		if pBattlePetID and pIsTradeable and canBeTraded then 
-			addon:Debug(("Checking status: %s"):format(pName), 1)
+			if pBattlePetID and pIsTradeable and canBeTraded then 
+				addon:Debug(("Checking status: %s"):format(pName), 1)
 
-			if isSlotted then 
-				Cage:Cage_Message(pName .. " :: " .. L.SLOTTED_PET_MESSAGE)
-				addon:Debug(pName .. " :: " .. L.SLOTTED_PET_MESSAGE, 2)
+				if isSlotted then 
+					Cage:Cage_Message(pName .. " :: " .. L.SLOTTED_PET_MESSAGE)
+					addon:Debug(pName .. " :: " .. L.SLOTTED_PET_MESSAGE, 2)
 
-			elseif isHurt then
-				Cage:Cage_Message(pName .. " :: " .. L.HURT_PET_MESSAGE)
-				addon:Debug(pName .. " :: " .. L.HURT_PET_MESSAGE, 2)
+				elseif isHurt then
+					Cage:Cage_Message(pName .. " :: " .. L.HURT_PET_MESSAGE)
+					addon:Debug(pName .. " :: " .. L.HURT_PET_MESSAGE, 2)
 
-			elseif (Profile.Handle_PetBlackList and  BPCM.BlackListDB:FindIndex(pName)) then
-				Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE_BLACKLIST)
-				addon:Debug(pName .. " :: " .. L.CAGED_MESSAGE_BLACKLIST, 2)
+				elseif (Profile.Handle_PetBlackList and  BPCM.BlackListDB:FindIndex(pName)) then
+					Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE_BLACKLIST)
+					addon:Debug(pName .. " :: " .. L.CAGED_MESSAGE_BLACKLIST, 2)
 
-			else
-				local numCollected = C_PetJournal.GetNumCollectedInfo(tonumber(pBattlePetID))
-				petCache[pName] = (pIsTradeable and pGuid and canBeTraded) or nil
-				petCageCount[pBattlePetID] = petCageCount[pBattlePetID] or 1
+				else
+					local numCollected = C_PetJournal.GetNumCollectedInfo(tonumber(pBattlePetID))
+					petCache[pName] = (pIsTradeable and pGuid and canBeTraded) or nil
+					petCageCount[pBattlePetID] = petCageCount[pBattlePetID] or 1
 
-				if ((pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "only")) or (not pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "ignore")))
-				--and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level))
-				and numCollected >= Profile.Cage_Max_Quantity
-				--and not isSlotted
-				and CheckSkipCaged(pBattlePetID)
-				and CheckBlackList(pName)
-				--and ((Profile.Handle_PetWhiteList == "only" and BPCM.WhiteListDB:FindIndex(pName)) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
-				and ((Profile.Handle_PetWhiteList == "only" and false) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
-				--and ((Profile.Cage_Once and not petCache[pBattlePetID] ) or (not Profile.Cage_Once  and true))
-				and TSMPricelookup(pBattlePetID) 
-				and TSMCustomPricelookup(pBattlePetID)
-				and TSMAuctionLookup(pBattlePetID) 
-				and (rarity and Profile.Cage_Quality[rarity]) then
+					if ((pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "only")) or (not pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "ignore")))
+					--and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level))
+					and numCollected >= Profile.Cage_Max_Quantity
+					--and not isSlotted
+					and CheckSkipCaged(pBattlePetID)
+					and CheckBlackList(pName)
+					--and ((Profile.Handle_PetWhiteList == "only" and BPCM.WhiteListDB:FindIndex(pName)) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
+					and ((Profile.Handle_PetWhiteList == "only" and false) or ((Profile.Handle_PetWhiteList == "include"  or Profile.Handle_PetWhiteList == "disable" ) and true))
+					--and ((Profile.Cage_Once and not petCache[pBattlePetID] ) or (not Profile.Cage_Once  and true))
+					and TSMPricelookup(pBattlePetID) 
+					and TSMCustomPricelookup(pBattlePetID)
+					and TSMAuctionLookup(pGuid,pBattlePetID) 
+					and (rarity and Profile.Cage_Quality[rarity]) then
 
-					--Checks to make sure that min max are valid.  tried to do when setting sliders but had issues due to 
-					--if Profile.Cage_Min_Level > Profile.Cage_Max_Level then
-						--Profile.Cage_Max_Level = Profile.Cage_Min_Level							
-					--elseif Profile.Cage_Min_Level > Profile.Cage_Max_Level then 
-					--	Profile.Cage_Min_Level = Profile.Cage_Max_Level
-					--end
+						--Checks to make sure that min max are valid.  tried to do when setting sliders but had issues due to 
+						--if Profile.Cage_Min_Level > Profile.Cage_Max_Level then
+							--Profile.Cage_Max_Level = Profile.Cage_Min_Level							
+						--elseif Profile.Cage_Min_Level > Profile.Cage_Max_Level then 
+						--	Profile.Cage_Min_Level = Profile.Cage_Max_Level
+						--end
 
-					if (tonumber(pLevel) >= tonumber(Profile.Cage_Min_Level)) 
-						and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level)) 
-						and (petCageCount[pBattlePetID] <= Profile.Cage_Ammount) then  --Breaks if included in previous if statement
-						addon:Debug(("%s added to queue"):format(pName), 1)
+						if (tonumber(pLevel) >= tonumber(Profile.Cage_Min_Level)) 
+							and (tonumber(pLevel) <= tonumber(Profile.Cage_Max_Level)) 
+							and (petCageCount[pBattlePetID] <= Profile.Cage_Ammount) then  --Breaks if included in previous if statement
+							addon:Debug(("%s added to queue"):format(pName), 1)
 
-						--Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE)
-						table.insert(petsToCage, pGuid)
-						petCache[pBattlePetID] = true
-						petCageCount[pBattlePetID] = petCageCount[pBattlePetID] + 1
+							--Cage:Cage_Message(pName .. " :: " .. L.CAGED_MESSAGE)
+							table.insert(petsToCage, pGuid)
+							petCache[pBattlePetID] = true
+							petCageCount[pBattlePetID] = petCageCount[pBattlePetID] + 1
+						end
 					end
 				end
 			end
@@ -545,8 +554,8 @@ function BPCM:GenerateListView()
 				local priceText = ""
 				local cageText = ""
 				if BPCM.TSM_LOADED and speciesID and (Profile.Cage_Max_Price or Profile.Cage_Custom_TSM_Price) then 
-					priceText =  L.LIST_DISPLAY_TEXT_PRICE:format(BPCM.TSM:MoneyToString(BPCM.TSM:GetCustomPriceValue(source, "p:"..speciesID..":1:3") or 0 ))
-					cageText = ((Profile.Cage_Custom_TSM_Price and Profile.Cage_Show_Custom_TSM_Price) and L.CAGE_RULES_PRICE_TO_CAGE:format(BPCM.TSM:MoneyToString(BPCM.TSM:GetCustomPriceValue(Profile.Cage_Custom_TSM_Price_Value, "p:"..speciesID..":1:2") or 0 ))) or ""
+					priceText =  L.LIST_DISPLAY_TEXT_PRICE:format(BPCM.TSM:MoneyToString(BPCM.TSM:GetCustomPriceValue(source, "p:"..speciesID) or 0 ))
+					cageText = ((Profile.Cage_Custom_TSM_Price and Profile.Cage_Show_Custom_TSM_Price) and L.CAGE_RULES_PRICE_TO_CAGE:format(BPCM.TSM:MoneyToString(BPCM.TSM:GetCustomPriceValue(Profile.Cage_Custom_TSM_Price_Value, "p:"..speciesID) or 0 ))) or ""
 				end
 
 				CheckBox:SetLabel(L.LIST_DISPLAY_TEXT:format(C_PetJournal.GetBattlePetLink(petID), level, priceText, cageText ))
