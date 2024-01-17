@@ -1,4 +1,4 @@
-﻿## Interface: 100200
+﻿## Interface: 100205
 ## Title: BattlePetCageMatch (@project-version@)
 ## Version: @project-version@
 ## Game Version: 10.1.7
