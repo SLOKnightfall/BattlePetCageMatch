@@ -1,7 +1,7 @@
-﻿## Interface: 100205
+﻿## Interface: 100207
 ## Title: BattlePetCageMatch (@project-version@)
 ## Version: @project-version@
-## Game Version: 10.1.7
+## Game Version: 10.2.7
 ## Author: SLOKnightfall
 ## Notes: Helper for dealing with Battle Pet Cages
 ## OptionalDeps: TradeSkillMaster_AuctionDB, TradeSkillMaster, Rematch
@@ -32,3 +32,4 @@ BattlePetCageMatch.lua
 CagePets.lua
 List.lua
 Debug.lua
+Patrons.lua

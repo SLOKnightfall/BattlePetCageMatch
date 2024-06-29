@@ -1123,6 +1123,43 @@ function BPCM:RefreshConfig()
 	Profile = BPCM.Profile
 end
 
+local Patrons = {
+	name = "Patrons |TInterface/Addons/BattlePetCageMatch/Images/Patreon:12:12|t",
+	handler = optionHandler,
+	get = "Getter",
+	set = "Setter",
+	type = 'group',
+	childGroups = "tab",
+	inline = false,
+	args = {
+			Patronss_Label = {
+				order = 1,
+				name = function() return addonName .. ' is distributed for free and supported trough donations. A massive thank you to all the supporters on Patreon and Paypal who keep development alive. You can become a patron too at |cFFF96854patreon.com/SLOKnightfall|r.\n\n\n', 'https://www.patreon.com/SLOKnightfall' end,
+				type = "description",
+				width = "full",
+
+			},
+			Patronss_Header = {
+				order = 2,
+				name = "Patrons",
+				type = "header",
+				width = "full",
+			},
+			
+		},
+}
+	
+local function addPatrons()
+	for i, namex in ipairs(addon.Patrons) do
+		Patrons.args["name"..i] = {
+				order = i + 2,
+				name = namex,
+				type = "description",
+				width = ".3",
+			}
+	end
+end
+
 
 ---Ace based addon initilization
 function BPCM:OnInitialize()
@@ -1150,6 +1187,10 @@ function BPCM:OnInitialize()
 
 	BPCM.BlackListDB = BPCM.PetBlacklist:new()
 	BPCM.WhiteListDB = BPCM.PetWhitelist:new()
+
+	LibStub("AceConfig-3.0"):RegisterOptionsTable("BPCM_Patrons", Patrons)
+	self.patrons = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("BPCM_Patrons", "Patrons |TInterface/Addons/BattlePetCageMatch/Images/Patreon:12:12|t","BattlePetCageMatch")
+
 end
 
 function BPCM:OnEnable()
@@ -1179,13 +1220,14 @@ function BPCM:OnEnable()
 
 	--Rematch hooks
 	if IsAddOnLoaded("Rematch") then
-		hooksecurefunc(Rematch,"FillCommonPetListButton", function(...)BPCM:UpdateRematch(...); end)
-		hooksecurefunc(RematchFrame,"ToggleSize", function(...) BPCM.RematchCageButton:SetShown(Profile.Show_Cage_Button and not RematchSettings.Minimized)end)
+		--hooksecurefunc(Rematch,"FillCommonPetListButton", function(...)BPCM:UpdateRematch(...); end)
+		--hooksecurefunc(RematchFrame,"ToggleSize", function(...) BPCM.RematchCageButton:SetShown(Profile.Show_Cage_Button and not RematchSettings.Minimized)end)
 	end
 
 	BPCM.TSM_LOADED =  IsAddOnLoaded("TradeSkillMaster") --and IsAddOnLoaded("TradeSkillMaster_AuctionDB")
 	BPCM.PJE_LOADED =  IsAddOnLoaded("PetJournalEnhanced")
 	BPCM.REMATCH_LOADED =  IsAddOnLoaded("Rematch")
+	addPatrons()
 end
 
 -- Binding Variables

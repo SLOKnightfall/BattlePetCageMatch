@@ -49,10 +49,10 @@ L.OPTIONS_HANDLE_PETWHITELIST_TOOLTIP = "This list will always be added and igno
 
 L.OPTIONS_PETWHITELIST = "Custom Pet List"
 
-L.OPTIONS_WHITELLIST_TOOLTIP = "Add any Pet that you don't included when caging pets, |c"..commandColor.."one Pet per line|r. Proper capitalization is not required, but all other characters in the  name must be accurate. You may may also use |c"..commandColor.."*|r as a wildcard.This list will always be added and ignores any set rules."
+L.OPTIONS_WHITELLIST_TOOLTIP = "Add any Pet that you want included when caging pets, |c"..commandColor.."one Pet per line|r. Proper capitalization is not required, but all other characters in the  name must be accurate. You may may also use |c"..commandColor.."*|r as a wildcard.This list will always be added and ignores any set rules."
 L.OPTIONS_HANDLE_PETBLACKLIST = "Skip Blacklisted pets"
 L.OPTIONS_PETBLACKLIST = "Pet Blacklist"
-L.OPTIONS_BLACKLIST_TOOLTIP = "Add any Pet that you don't included when caging pets, |c"..commandColor.."one Pet per line|r. Proper capitalization is not required, but all other characters in the  name must be accurate. You may may also use |c"..commandColor.."*|r as a wildcard. "
+L.OPTIONS_BLACKLIST_TOOLTIP = "Add any Pet that you don't want included when caging pets, |c"..commandColor.."one Pet per line|r. Proper capitalization is not required, but all other characters in the  name must be accurate. You may may also use |c"..commandColor.."*|r as a wildcard. "
 
 L.OPTIONS_TSM_HEADER = "TSM Data Options"
 L.OPTIONS_TSM_VALUE = "Show TSM Data(Requires TSM)"

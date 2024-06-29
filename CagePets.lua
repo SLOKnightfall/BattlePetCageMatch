@@ -15,7 +15,6 @@ local learn_queue = {}
 local skipPetList = {}
 local learnindex = nil
 local skil_list = {}
---local source = (Profile.TSM_Use_Custom and Profile.TSM_Custom) or BPCM.PriceSources[Profile.TSM_Market] or "DBMarket"
 local cageListButton
 local LISTWINDOW
 
@@ -86,9 +85,9 @@ end
 
 --Cycles through pet journal and creates a table of pets that match caging rules
 function Cage:GeneratePetList()
-	--C_PetJournal.ClearSearchFilter() -- Clear filter so we have a full pet list.
+	C_PetJournal.ClearSearchFilter() -- Clear filter so we have a full pet list.
 	PetJournalFilterDropDown_ResetFilters()
-	addon:Debug("Clearing Searc Filter", 1)
+	addon:Debug("Clearing Search Filter", 1)
 	PetJournalFilterDropDown_SetCollectedFilter(true)
 	PetJournalFilterDropDown_SetNotCollectedFilter(false)
 
@@ -107,7 +106,6 @@ function Cage:GeneratePetList()
 	local petCageCount = {}
 
 	if total == 0 then Cage:Cage_Message("No pets found due to filters") return end
-
 
 	for index = 1, owned do -- Loop every pet owned (unowned will be over the offset).
 		local pGuid, pBattlePetID, _, pNickname, pLevel, pIsFav, _, pName, _, _, _, _, _, _, _, pIsTradeable = C_PetJournal.GetPetInfoByIndex(index)
@@ -134,7 +132,7 @@ function Cage:GeneratePetList()
 
 				else
 					local numCollected = C_PetJournal.GetNumCollectedInfo(tonumber(pBattlePetID))
-					petCache[pName] = (pIsTradeable and pGuid and canBeTraded) or nil
+					petCache[pName] = ((pIsTradeable and pGuid and canBeTraded) and pGuid) or nil
 					petCageCount[pBattlePetID] = petCageCount[pBattlePetID] or 1
 
 					if ((pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "only")) or (not pIsFav and (Profile.Favorite_Only == "include" or Profile.Favorite_Only == "ignore")))
@@ -346,17 +344,15 @@ function Cage:OnEnable()
 	BPCM.cageButton = Cage:CreateButton("PetJournal")
 	
 	if IsAddOnLoaded("Rematch") then
-		BPCM.RematchCageButton = Cage:CreateButton("Rematch")
-		BPCM.RematchCageButton:SetParent(RematchToolbar)
-		BPCM.RematchCageButton:ClearAllPoints()
-		BPCM.RematchCageButton:SetPoint("LEFT", RematchToolbar.PetCount, "RIGHT", 5, 0)
-		BPCM.RematchCageButton:SetWidth(32)
-		BPCM.RematchCageButton:SetHeight(32)
-		BPCM.RematchCageButton:SetShown(true) --Profile.Show_Cage_Button and not RematchSettings.Minimized)
+		--BPCM.RematchCageButton = Cage:CreateButton("Rematch")
+		--BPCM.RematchCageButton:SetParent(RematchToolbar)
+		--BPCM.RematchCageButton:ClearAllPoints()
+		--BPCM.RematchCageButton:SetPoint("LEFT", RematchToolbar.PetCount, "RIGHT", 5, 0)
+		--BPCM.RematchCageButton:SetWidth(32)
+		--BPCM.RematchCageButton:SetHeight(32)
+		--BPCM.RematchCageButton:SetShown(true) --Profile.Show_Cage_Button and not RematchSettings.Minimized)
 	end
-
 end
-
 
 --Dialog Box for user decided handeling of an existing cage list
 StaticPopupDialogs["BPCM_CONTINUE_CAGING"] = {
@@ -542,10 +538,10 @@ function BPCM:GenerateListView()
 
 	local source = GetPriceSource()
 
+
 	for i=BPCM.eventFrame.petIndex, #petsToCage do
 		local petID = petsToCage[i]
 
-		--ToDo: Why is a Bool being returned
 		if type(petID) == "string" then 
 			local speciesID, customName, level, xp, maxXp, displayID, isFavorite, name, icon, petType, creatureID, sourceText, description, isWild, canBattle, tradable, unique, obtainable = C_PetJournal.GetPetInfoByPetID(petID)
 			if not skipPetList[petID] then 
