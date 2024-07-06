@@ -937,7 +937,7 @@ end
 local UpdateButton
 ---Updates the icons on Pet Journal to tag caged pets
  function BPCM:UpdatePetList_Icons()
- 	if not PetJournal:IsVisible() or (Rematch and RematchPetPanel:IsVisible()) then return end
+ 	if not PetJournal:IsVisible() or (Rematch and RematchFrame:IsVisible()) then return end
 
 	--[[local scrollFrame = (Rematch and RematchPetPanel:IsVisible() and RematchPetPanel)
 			or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and PetJournalEnhancedListScrollFrame)
@@ -953,8 +953,11 @@ local UpdateButton
 	
 	if  ( numPets < 1 ) then return end  --If there are no Pets then nothing needs to be done.
 
-	local numDisplayedPets = (Rematch and RematchPetPanel:IsVisible() and  #roster.petList)
-		or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting and BPCM.Sorting:GetNumPets())
+	--local numDisplayedPets = (Rematch and RematchPetPanel:IsVisible() and  #roster.petList)
+		--or (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting and BPCM.Sorting:GetNumPets())
+		--or C_PetJournal.GetNumPets()
+
+	local numDisplayedPets = (PetJournalEnhanced and PetJournalEnhancedListScrollFrame:IsVisible() and BPCM.Sorting and BPCM.Sorting:GetNumPets())
 		or C_PetJournal.GetNumPets()
 
 		for index, button in PetJournal.ScrollBox:EnumerateFrames() do
