@@ -86,10 +86,13 @@ end
 --Cycles through pet journal and creates a table of pets that match caging rules
 function Cage:GeneratePetList()
 	C_PetJournal.ClearSearchFilter() -- Clear filter so we have a full pet list.
-	PetJournalFilterDropDown_ResetFilters()
+	PetJournal.FilterDropdown:Reset()
+	--PetJournalFilterDropDown_ResetFilters()
 	addon:Debug("Clearing Search Filter", 1)
-	PetJournalFilterDropDown_SetCollectedFilter(true)
-	PetJournalFilterDropDown_SetNotCollectedFilter(false)
+	--PetJournalFilterDropDown_SetCollectedFilter(true)
+	--PetJournalFilterDropDown_SetNotCollectedFilter(false)
+	PetJournalFilterDropdown_SetAllPetSources(true)
+	PetJournalFilterDropdown_SetAllPetTypes(true)
 
 	C_PetJournal.SetPetSortParameter(LE_SORT_BY_LEVEL) -- Sort by level, ensuring higher level pets are encountered first.
 	addon:Debug("Sorting By Level", 1)

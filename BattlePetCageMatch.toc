@@ -1,7 +1,7 @@
-﻿## Interface: 100207
+﻿## Interface: 110002
 ## Title: BattlePetCageMatch (@project-version@)
 ## Version: @project-version@
-## Game Version: 10.2.7
+## Game Version: 11.0.2
 ## Author: SLOKnightfall
 ## Notes: Helper for dealing with Battle Pet Cages
 ## OptionalDeps: TradeSkillMaster_AuctionDB, TradeSkillMaster, Rematch
