@@ -150,7 +150,7 @@ local options = {
 					type = "toggle",
 					set = function(info,val) 
 						Profile.Show_Cage_Button = val
-						if IsAddOnLoaded("Rematch") then BPCM.RematchCageButton:SetShown(Profile.Show_Cage_Button and not RematchSettings.Minimized) end
+						if C_AddOns.IsAddOnLoaded("Rematch") then BPCM.RematchCageButton:SetShown(Profile.Show_Cage_Button and not RematchSettings.Minimized) end
 						BPCM.cageButton:SetShown(Profile.Show_Cage_Button) end,
 					get = function(info) return Profile.Show_Cage_Button end,
 					width = "full",
@@ -1207,7 +1207,7 @@ function BPCM:OnEnable()
 	BPCM:RegisterEvent("MAIL_CLOSED", UpdateData)
 
 	--Hooking PetJournal functions
-	LoadAddOn("Blizzard_Collections")
+	C_AddOns.LoadAddOn("Blizzard_Collections")
 	hooksecurefunc("PetJournal_UpdatePetList", UpdateData)
 	hooksecurefunc(PetJournal.ScrollBox,"Update", function(...)BPCM:UpdatePetList_Icons(); end)
 	hooksecurefunc("BattlePetToolTip_Show", function(species, level, quality, health, power, speed, customName)
@@ -1215,21 +1215,21 @@ function BPCM:OnEnable()
 	end)
 ----PetJournal.ScrollBox.ScrollTarget
 	--PetJournalEnhanced hooks
-	if IsAddOnLoaded("PetJournalEnhanced") then
+	if C_AddOns.IsAddOnLoaded("PetJournalEnhanced") then
 		hooksecurefunc(PetJournalEnhancedListScrollFrame,"update", function(...)BPCM:UpdatePetList_Icons(); end)
 		 local PJE = LibStub("AceAddon-3.0"):GetAddon("PetJournalEnhanced")
 		 BPCM.Sorting = PJE:GetModule(("Sorting"))
 	end
 
 	--Rematch hooks
-	if IsAddOnLoaded("Rematch") then
+	if C_AddOns.IsAddOnLoaded("Rematch") then
 		--hooksecurefunc(Rematch,"FillCommonPetListButton", function(...)BPCM:UpdateRematch(...); end)
 		--hooksecurefunc(RematchFrame,"ToggleSize", function(...) BPCM.RematchCageButton:SetShown(Profile.Show_Cage_Button and not RematchSettings.Minimized)end)
 	end
 
-	BPCM.TSM_LOADED =  IsAddOnLoaded("TradeSkillMaster") --and IsAddOnLoaded("TradeSkillMaster_AuctionDB")
-	BPCM.PJE_LOADED =  IsAddOnLoaded("PetJournalEnhanced")
-	BPCM.REMATCH_LOADED =  IsAddOnLoaded("Rematch")
+	BPCM.TSM_LOADED =  C_AddOns.IsAddOnLoaded("TradeSkillMaster") --and IsAddOnLoaded("TradeSkillMaster_AuctionDB")
+	BPCM.PJE_LOADED =  C_AddOns.IsAddOnLoaded("PetJournalEnhanced")
+	BPCM.REMATCH_LOADED =  C_AddOns.IsAddOnLoaded("Rematch")
 	addPatrons()
 end
 

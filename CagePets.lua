@@ -346,7 +346,7 @@ function Cage:OnEnable()
 	-- Add caging buttons to Pet Journal & Rematch
 	BPCM.cageButton = Cage:CreateButton("PetJournal")
 	
-	if IsAddOnLoaded("Rematch") then
+	if C_AddOns.IsAddOnLoaded("Rematch") then
 		--BPCM.RematchCageButton = Cage:CreateButton("Rematch")
 		--BPCM.RematchCageButton:SetParent(RematchToolbar)
 		--BPCM.RematchCageButton:ClearAllPoints()
